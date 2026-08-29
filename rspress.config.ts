@@ -16,11 +16,11 @@ const generateChangelogParams = (items: Omit<ChangelogPluginOptions['items'][num
 
 export default defineConfig({
   root: path.join(__dirname, 'docs'),
-  title: 'BiliUniverse',
+  title: 'Biliverse',
   description: '哔哩哔哩功能优化及增强解决方案',
   icon: 'https://avatars.githubusercontent.com/u/129515498?s=200&v=4',
   logo: 'https://avatars.githubusercontent.com/u/129515498?s=80&v=4',
-  logoText: 'BiliUniverse',
+  logoText: 'Biliverse',
   // logo: {
   //   light: '/rspress-light-logo.png',
   //   dark: '/rspress-dark-logo.png',
@@ -33,7 +33,7 @@ export default defineConfig({
   themeConfig: {
     lastUpdated: true,
     socialLinks: [
-      { icon: 'github', mode: 'link', content: 'https://github.com/BiliUniverse' },
+      { icon: 'github', mode: 'link', content: 'https://github.com/Biliverse' },
       {
         icon: {
           svg: fs.readFileSync(path.join(__dirname, 'docs', 'public', 'telegram.svg'), 'utf-8'),
@@ -56,7 +56,7 @@ export default defineConfig({
   },
   plugins: [
     pluginSitemap({
-      domain: 'https://BiliUniverse.github.io',
+      domain: 'https://biliverse.github.io',
     }),
     pluginChangelog({
       addSidebar: false,
@@ -65,27 +65,27 @@ export default defineConfig({
         {
           title: '⚙ Enhanced',
           routePath: 'enhanced',
-          repo: 'BiliUniverse/Enhanced',
+          repo: 'Biliverse/Enhanced',
         },
         {
           title: '🌐 Global',
           routePath: 'global',
-          repo: 'BiliUniverse/Global',
+          repo: 'Biliverse/Global',
         },
         {
           title: '🔀 Redirect',
           routePath: 'redirect',
-          repo: 'BiliUniverse/Redirect',
+          repo: 'Biliverse/Redirect',
         },
         {
           title: '🛡️ ADBlock',
           routePath: 'ad-block',
-          repo: 'BiliUniverse/ADBlock',
+          repo: 'Biliverse/ADBlock',
         },
         {
           title: '✈ Roaming',
           routePath: 'roaming',
-          repo: 'BiliUniverse/Roaming',
+          repo: 'Biliverse/Roaming',
         },
       ]),
     }),

@@ -3,7 +3,7 @@ pageType: home
 
 hero:
     icon: 🪐
-    name: <span class="hero-name">🪐 哔哩万象<br>BiliUniverse</span>
+    name: <span class="hero-name">🪐 哔哩万象<br>Biliverse</span>
     text: |
         哔哩哔哩功能优化
         及增强解决方案
@@ -14,10 +14,10 @@ hero:
           link: /guide/
         - theme: alt
           text: GitHub
-          link: https://github.com/BiliUniverse
+          link: https://github.com/Biliverse
     image:
         src: https://avatars.githubusercontent.com/u/129515498?s=400&v=4
-        alt: BiliUniverse Logo
+        alt: Biliverse Logo
 
 features:
     - icon: ⚙️

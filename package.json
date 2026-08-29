@@ -1,5 +1,5 @@
 {
-  "name": "@biliuniverse/biliuniverse.github.io",
+  "name": "@biliverse/biliverse.github.io",
   "private": true,
   "scripts": {
     "preinstall": "npx -y only-allow pnpm",
@@ -23,6 +23,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/BiliUniverse/BiliUniverse.github.io.git"
+    "url": "https://github.com/Biliverse/Biliverse.github.io.git"
   }
 }
