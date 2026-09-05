@@ -1,0 +1,30 @@
+import http from "node:http";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
+// Isolated preview store; never reads or writes the proxy application's settings.
+const store = new Map();
+globalThis.$environment = { "surge-version": "local-preview" };
+globalThis.$persistentStore = { read: key => store.get(key) ?? null, write: (value, key) => { store.set(key, value); return true; } };
+globalThis.$argument = {};
+const requests = {};
+for (const name of ["Enhanced", "Global", "Redirect", "ADBlock"]) {
+  requests[name] = (await import(pathToFileURL(path.resolve(import.meta.dirname, "../..", name, "src/process/Request.mjs")))).Request;
+}
+const server = http.createServer(async (request, response) => {
+  try {
+    const url = new URL(request.url, "https://app.bilibili.com");
+    if (url.pathname === "/") { response.writeHead(302, { Location: "/biliverse/settings/" }); response.end(); return; }
+    const name = url.pathname.split("/")[4] || "Enhanced";
+    if (!requests[name]) { response.writeHead(404); response.end(); return; }
+    let body = "";
+    for await (const chunk of request) { body += chunk; if (body.length > 65536) { response.writeHead(413); response.end(); return; } }
+    globalThis.$argument = { Storage: "Argument", LogLevel: "OFF" };
+    const headers = { ...request.headers };
+    if (headers.origin === `http://${request.headers.host}`) headers.origin = url.origin;
+    const { $response } = await requests[name]({ url: url.toString(), method: request.method, headers, body });
+    if (!$response) { response.writeHead(404); response.end(); return; }
+    response.writeHead($response.status, $response.headers); response.end($response.body);
+  } catch (error) { console.error(error); response.writeHead(500); response.end("Preview failed"); }
+});
+server.listen(Number(process.env.PORT || 8791), "127.0.0.1", () => console.log(`Settings preview: http://127.0.0.1:${server.address().port}/biliverse/settings/`));
