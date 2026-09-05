@@ -1,18 +1,18 @@
 # Biliverse 本地设置
 
-页面入口位于“我的”页面的官方“设置”项之后。Enhanced 负责插入入口和根页面；点击模块后进入对应插件自己的分支页面。每个插件负责自己的配置 GET/POST 和页面资源，使用既有的 `getStorage` 读取本地配置。
+页面入口位于“我的”页面的官方“设置”项之后，目标地址为 `https://biliverse.github.io/settings/`。Enhanced 负责插入入口；根页面即使插件暂时关闭也能从 GitHub Pages 打开。点击模块后，在线单页面通过绝对地址访问对应插件的本地设置接口；每个插件负责自己的分支设置 GET/POST 和资源，使用既有的 `getStorage` 读取本地配置。
 
 ## 资源与请求
 
 | URL | 处理模块 |
 | --- | --- |
-| `https://app.bilibili.com/biliverse/settings/` | Enhanced：内嵌的 HTML、CSS、JS、项目图片 |
-| `/biliverse/settings/api/Enhanced` | Enhanced 设置处理器 |
-| `/biliverse/settings/api/Global` | Global 设置处理器 |
-| `/biliverse/settings/api/Redirect` | Redirect 设置处理器 |
-| `/biliverse/settings/api/ADBlock` | ADBlock 设置处理器 |
+| `https://biliverse.github.io/settings/` | GitHub Pages：根 HTML、CSS、JS、项目图片 |
+| `/settings/api/Enhanced` | Enhanced 设置处理器 |
+| `/settings/api/Global` | Global 设置处理器 |
+| `/settings/api/Redirect` | Redirect 设置处理器 |
+| `/settings/api/ADBlock` | ADBlock 设置处理器 |
 
-这些地址由各自插件的本机代理脚本返回。它们不是哔哩哔哩官方接口，也不需要在该域名部署服务。对应功能模块需要安装，页面才能读取和保存该模块的设置。HTTPS 需对 `app.bilibili.com` 启用 MITM。
+设置 API 由各自插件的本机代理脚本返回，全部位于 `biliverse.github.io` 命名空间。在线页面只请求自己的 `/settings/api/<Module>` 地址，插件关闭或失效时探测失败并禁用对应入口；页面自身仍可打开。它们不占用哔哩哔哩官方接口，也不需要污染 `app.bilibili.com`。HTTPS 只需对 `biliverse.github.io` 启用 MITM。
 
 手机使用 `sections_v2[].items[]`，iPad 使用 `ipad_*_sections`。只有上游或 Enhanced 过滤后的页面仍存在官方 `bilibili://user_center/setting` 项时才插入，不猜测其它页面位置。重复处理不会重复添加。Enhanced 的 Mine 自定义开关关闭时仍可插入入口。入口图标使用现有 Biliverse GitHub 组织头像地址，HTML 内的 logo 来自 Universe `database/icon.png`，四个产品图标来自各自 `src/assets/icon_rounded_108x.png`。
 
@@ -47,7 +47,7 @@ node --test settings/settings.test.mjs
 node scripts/preview-settings.mjs
 ```
 
-生成器同时更新 `docs/public/settings/index.html` 和四个模块的 `src/function/settings.mjs`，不要手改这些生成文件。新增或修改 argument 时重新运行生成器。各模块继续使用原有 Rollup 和 arguments-builder 命令构建正式版/开发版脚本、Surge/Loon/Stash 等模板。纯 Rewrite 模板保持原行为。
+生成器同时更新 `docs/public/settings/index.html` 和四个模块的 `src/function/settings.mjs`，不要手改这些生成文件。新增或修改 argument 时重新运行生成器。各模块继续使用原有 Rollup 和 arguments-builder 命令构建正式版/开发版脚本、Surge/Loon/Stash 等模板。纯 Rewrite 模板保持原行为。根页面使用 hash 分支导航，因此 GitHub Pages 不需要为每个模块额外部署 HTML 文件。
 
 预览地址为 `http://127.0.0.1:8791/biliverse/settings/`，使用独立内存存储，通过实际四个 Request 处理器响应，不读取用户代理配置。预览内存数据在服务退出后消失。静态 Pages 地址只提供页面资源；本地 Mock 才提供读写能力。
 

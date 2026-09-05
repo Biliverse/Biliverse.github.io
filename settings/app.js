@@ -3,6 +3,7 @@ const logo = "/* LOGO */";
 const content = document.querySelector("#content");
 const title = document.querySelector("#title");
 const back = document.querySelector("#back");
+const apiOrigin = "https://biliverse.github.io";
 let current, busy = false, revision = 0, toastTimer;
 const pathModule = location.pathname.match(/^\/biliverse\/settings\/([^/]+)\/?$/)?.[1];
 if (pathModule && !location.hash) location.hash = pathModule;
@@ -28,7 +29,7 @@ async function probe(module) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 3500);
   try {
-    const response = await fetch(`/biliverse/settings/api/${module}`, { method: "HEAD", cache: "no-store", credentials: "omit", headers: { "X-Biliverse-Settings": "1" }, signal: controller.signal });
+    const response = await fetch(`${apiOrigin}/settings/api/${module}`, { method: "HEAD", cache: "no-store", credentials: "omit", headers: { "X-Biliverse-Settings": "1" }, signal: controller.signal });
     return response.ok;
   } catch { return false; }
   finally { clearTimeout(timer); }
@@ -38,7 +39,7 @@ async function api(module, values) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
   try {
-    const response = await fetch(`/biliverse/settings/api/${module}`, {
+    const response = await fetch(`${apiOrigin}/settings/api/${module}`, {
       method: values ? "POST" : "GET", cache: "no-store", credentials: "omit", signal: controller.signal,
       headers: { "X-Biliverse-Settings": "1", ...(values ? { "Content-Type": "application/json" } : {}) },
       ...(values ? { body: JSON.stringify({ values }) } : {}),
@@ -102,7 +103,7 @@ function showHome() {
   content.append(brand);
   const rows = group("");
   for (const module of modules) {
-    const link = element("a"); link.href = `/biliverse/settings/${module.name}/`; link.dataset.module = module.name;
+    const link = element("a"); link.href = `#${module.name}`; link.dataset.module = module.name;
     const item = row(module.name, module.description);
     const icon = element("img", "module-icon"); icon.src = module.icon; icon.alt = "";
     item.prepend(icon); item.append(element("span", "chevron", "›"));

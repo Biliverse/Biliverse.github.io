@@ -13,7 +13,7 @@ const names = ["Enhanced", "Global", "Redirect", "ADBlock"];
 const requests = {};
 for (const name of names) requests[name] = (await import(pathToFileURL(path.join(root, name, "src/process/Request.mjs")))).Request;
 function request(name, method = "GET", values, headers = {}) {
-  return { url: `https://app.bilibili.com/biliverse/settings/api/${name}`, method, headers: { "X-Biliverse-Settings": "1", "Content-Type": "application/json", ...headers }, ...(values ? { body: JSON.stringify({ values }) } : {}) };
+  return { url: `https://biliverse.github.io/settings/api/${name}`, method, headers: { "X-Biliverse-Settings": "1", "Content-Type": "application/json", ...headers }, ...(values ? { body: JSON.stringify({ values }) } : {}) };
 }
 
 for (const name of names) test(`${name}: Enhanced owns settings API and saves module settings locally`, async () => {
@@ -77,12 +77,13 @@ test("empty arrays replace prior selections and unrelated modules/caches survive
 
 test("local HTML is fully embedded; settings API refuses other hosts", async () => {
   const { settingsResponse } = await import(pathToFileURL(path.join(root, "Enhanced/src/function/settings.mjs")));
-  const response = settingsResponse({ url: "https://app.bilibili.com/biliverse/settings/", method: "GET" }, {});
+  const response = settingsResponse({ url: "https://biliverse.github.io/settings/", method: "GET" }, {});
   assert.equal(response.status, 200);
   assert.match(response.headers["Content-Type"], /text\/html/);
   assert.match(response.body, /data:image\/png;base64/);
   assert.doesNotMatch(response.body, /(?:src|href)="https?:/);
-  assert.equal(settingsResponse({ url: "https://evil.example/biliverse/settings/api/Enhanced", method: "GET" }, {}), undefined);
+  assert.equal(settingsResponse({ url: "https://evil.example/settings/api/Enhanced", method: "GET" }, {}), undefined);
+  assert.equal(settingsResponse({ url: "https://app.bilibili.com/settings/api/Enhanced", method: "GET" }, {}), undefined);
 });
 
 test("phone/iPad entry follows official settings exactly once, including when Mine customization is disabled", async () => {
@@ -98,5 +99,5 @@ test("phone/iPad entry follows official settings exactly once, including when Mi
   const { Response } = await import(pathToFileURL(path.join(root, "Enhanced/src/process/Response.mjs")));
   const upstream = { code: 0, data: { sections_v2: [{ items: [{ uri: "bilibili://user_center/setting", title: "设置" }] }] } };
   const result = await Response({ url: "https://app.bilibili.com/x/v2/account/mine" }, { headers: { "Content-Type": "application/json" }, body: JSON.stringify(upstream) });
-  assert.equal(JSON.parse(result.body).data.sections_v2[0].items.find(item => item.uri === "https://app.bilibili.com/biliverse/settings/").title, "Biliverse 设置");
+  assert.equal(JSON.parse(result.body).data.sections_v2[0].items.find(item => item.uri === "https://biliverse.github.io/settings/").title, "Biliverse 设置");
 });
