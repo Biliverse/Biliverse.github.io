@@ -1,10 +1,17 @@
 const modules = /* MODULES */;
 const logo = /* LOGO */;
-const content = document.querySelector("#content");
+const viewport = document.querySelector("#content");
+let content;
 const title = document.querySelector("#title");
 const back = document.querySelector("#back");
 let current, busy = false, revision = 0, toastTimer;
-const pathModule = modules.length === 1 ? modules[0].name : null;
+const pathModule = location.pathname.match(/^\/settings\/(Enhanced|Global|Redirect|ADBlock)\/$/)?.[1] ?? "";
+const screens = new Map();
+const moduleData = new Map();
+let route = location.hash.slice(1) || pathModule;
+let historyIndex = 0;
+let activeScreen;
+history.replaceState({ settingsIndex: 0, settingsRoute: route }, "", route ? `#${route}` : location.pathname);
 const uaTheme = navigator.userAgent.match(/themeId\/(\d+)/);
 if (uaTheme) document.documentElement.dataset.theme = uaTheme[1] === "2" ? "dark" : "light";
 
@@ -84,7 +91,7 @@ function group(name) {
 async function save(field, value) {
   if (busy) return false;
   const module = current.module;
-  const route = location.hash;
+  const savingRoute = route;
   busy = true;
   content.querySelectorAll("button,input").forEach(node => { node.disabled = true; });
   const values = { ...current.values, [field.key]: value };
@@ -92,7 +99,9 @@ async function save(field, value) {
   try {
     await api(module, values);
     const updated = await api(module);
-    if (location.hash !== route) return false;
+    moduleData.set(module, updated);
+    for (const key of screens.keys()) if (key === module || key.startsWith(`${module}/`)) screens.delete(key);
+    if (route !== savingRoute) return false;
     current = updated;
     toast(values.Storage === "PersistentStore" ? "已保存，下次请求生效" : "已切换配置来源");
     return true;
@@ -122,9 +131,18 @@ function showHome() {
     const icon = themedImage(module.icon, "logo", "");
     const status = element("span", "module-status", "检测中");
     link.append(icon, element("span", "name", module.name), status); rows.append(link);
-    probe(module.name).then(available => {
+    checkModule(link, status, module.name);
+  }
+  content.append(element("p", "source", "设置仅保存在当前代理工具中"));
+}
+
+function checkModule(link, status, name) {
+    const version = revision;
+    link.removeAttribute("href"); link.setAttribute("aria-disabled", "true"); link.classList.add("module-disabled"); status.textContent = "检测中";
+    probe(name).then(available => {
+      if (version !== revision) return;
       if (available) {
-        link.href = `/settings/${module.name}/`;
+        link.href = `#${name}`;
         link.removeAttribute("aria-disabled"); link.classList.remove("module-disabled");
         status.textContent = "";
         return;
@@ -132,8 +150,6 @@ function showHome() {
       link.removeAttribute("href"); link.setAttribute("aria-disabled", "true"); link.classList.add("module-disabled");
       status.textContent = "未响应";
     });
-  }
-  content.append(element("p", "source", "设置仅保存在当前代理工具中"));
 }
 
 function showModule() {
@@ -151,7 +167,7 @@ function showModule() {
       const toggle = element("button", `v-toggle v-toggle--small${value ? "" : " v-toggle--closed"}`);
       toggle.setAttribute("role", "switch"); toggle.setAttribute("aria-checked", String(value)); toggle.setAttribute("aria-label", field.name);
       toggle.append(element("span", "v-toggle__circle"));
-      toggle.onclick = async () => { if (await save(field, !value)) { content.replaceChildren(); showModule(); } };
+      toggle.onclick = async () => { if (await save(field, !value)) { content.replaceChildren(); showModule(); activeScreen.data = current; screens.set(route, activeScreen); } };
       item.append(toggle);
       groups.get(heading).append(item);
     } else {
@@ -187,39 +203,92 @@ function showEditor(field) {
     read = () => field.type === "number" ? Number(input.value) : input.value;
   }
   const button = element("button", "primary", "保存");
-  button.onclick = async () => { if (await save(field, read())) location.hash = current.module; };
+  button.onclick = async () => { if (await save(field, read())) goBack(); };
   content.append(button);
 }
 
-async function render() {
+async function render(direction = 0) {
   const version = ++revision;
-  const [module, key] = (location.hash.slice(1) || pathModule || "").split("/");
-  content.replaceChildren(); content.className = "page";
+  const [module, key] = route.split("/");
+  if (module && !modules.some(item => item.name === module)) { navigate("", true); return; }
+  const previous = activeScreen;
+  if (previous) { previous.title = title.textContent; previous.scroll = previous.node.scrollTop; }
+  let screen = screens.get(route);
+  const cached = Boolean(screen);
+  if (!screen) {
+    screen = { node: element("div", "settings-screen"), title: module || "Biliverse", data: null };
+    screens.set(route, screen);
+  }
+  activeScreen = screen; content = screen.node; current = screen.data;
+  for (const node of viewport.children) {
+    for (const animation of node.getAnimations()) animation.cancel();
+    if (node !== previous?.node) node.remove();
+  }
+  viewport.append(content);
+  content.scrollTop = screen.scroll ?? 0;
+  if (previous && previous.node !== content) {
+    previous.node.inert = true;
+    previous.node.setAttribute("aria-hidden", "true");
+    const duration = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 260;
+    const options = { duration, easing: "cubic-bezier(.22,.61,.36,1)" };
+    const exit = previous.node.animate([{ transform: "translateX(0)" }, { transform: `translateX(${-direction * 100}%)` }], options);
+    content.animate([{ transform: `translateX(${direction * 100}%)` }, { transform: "translateX(0)" }], options);
+    exit.onfinish = () => { if (previous !== activeScreen) previous.node.remove(); };
+  }
+  content.inert = false; content.removeAttribute("aria-hidden");
+  viewport.dataset.direction = direction < 0 ? "back" : "forward";
   back.hidden = !module;
+  title.textContent = screen.title;
+  if (cached) {
+    if (!module) for (const link of content.querySelectorAll("[data-module]")) checkModule(link, link.querySelector(".module-status"), link.dataset.module);
+    return;
+  }
   if (!module) { current = undefined; showHome(); return; }
-  if (!modules.some(item => item.name === module)) { location.hash = ""; return; }
   title.textContent = module;
   content.append(element("p", "notice", "正在读取本地设置…"));
   try {
-    const result = await api(module);
+    const result = moduleData.get(module) ?? await api(module);
+    moduleData.set(module, result);
     if (version !== revision) return;
-    current = result; content.replaceChildren();
+    current = result; screen.data = result; content.replaceChildren();
     if (!key) showModule();
     else {
       const field = current.fields.find(item => item.key === decodeURIComponent(key));
-      if (field) showEditor(field); else location.hash = module;
+      if (field) showEditor(field); else navigate(module, true);
     }
+    screen.title = title.textContent;
   } catch (error) {
     if (version !== revision) return;
     content.replaceChildren(element("p", "notice error", error.message));
-    const retry = element("button", "primary", "重新连接"); retry.onclick = render; content.append(retry);
+    const retry = element("button", "primary", "重新连接"); retry.onclick = () => { screens.delete(route); render(); }; content.append(retry);
   }
 }
-back.onclick = () => {
+
+function navigate(next, replace = false) {
   if (busy) return;
-  if (location.hash.includes("/")) location.hash = current.module;
-  else location.assign("/settings/");
-};
-window.addEventListener("hashchange", render);
-window.addEventListener("pageshow", event => { if (event.persisted) render(); });
+  if (activeScreen && !activeScreen.data && route) screens.delete(route);
+  if (!replace) historyIndex++;
+  history[replace ? "replaceState" : "pushState"]({ settingsIndex: historyIndex, settingsRoute: next }, "", next ? `#${next}` : "/settings/");
+  route = next;
+  render(replace ? -1 : 1);
+}
+function goBack() {
+  if (busy) return;
+  if (historyIndex > 0) history.back();
+  else navigate(route.includes("/") ? route.split("/")[0] : "", true);
+}
+back.onclick = goBack;
+viewport.addEventListener("click", event => {
+  const link = event.target.closest("a[href^='#']");
+  if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault(); navigate(link.hash.slice(1));
+});
+window.addEventListener("popstate", event => {
+  const nextIndex = event.state?.settingsIndex ?? 0;
+  if (activeScreen && !activeScreen.data && route) screens.delete(route);
+  const direction = nextIndex < historyIndex ? -1 : 1;
+  historyIndex = nextIndex; route = event.state?.settingsRoute ?? location.hash.slice(1);
+  render(direction);
+});
+window.addEventListener("pageshow", event => { if (event.persisted && !route) render(); });
 render();

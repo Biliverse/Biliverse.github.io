@@ -9,6 +9,10 @@
   <style>/* FORM_CSS */</style>
   <style>/* APP_CSS */</style>
   <style>/* SELF_SERVICE_CSS */</style>
+  <style>
+    #content{position:relative;overflow:hidden;max-width:none;margin:0;padding:0;height:calc(100vh - 52px - env(safe-area-inset-top));height:calc(100dvh - 52px - env(safe-area-inset-top))}
+    .settings-screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-x:contain;background:var(--bg2);padding:12px max(16px,calc((100% - 688px)/2)) calc(28px + env(safe-area-inset-bottom))}
+  </style>
 </head>
 <body>
   <header class="navbar"><button id="back" aria-label="返回">‹</button><h1 id="title">Biliverse 设置</h1><span class="nav-spacer"></span></header>
