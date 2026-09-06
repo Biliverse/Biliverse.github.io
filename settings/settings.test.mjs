@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readFile, readdir } from "node:fs/promises";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const store = new Map();
@@ -16,7 +17,7 @@ function request(name, method = "GET", values, headers = {}) {
   return { url: `https://biliverse.github.io/settings/api/${name}`, method, headers: { "X-Biliverse-Settings": "1", "Content-Type": "application/json", ...headers }, ...(values ? { body: JSON.stringify({ values }) } : {}) };
 }
 
-for (const name of names) test(`${name}: Enhanced owns settings API and saves module settings locally`, async () => {
+for (const name of names) test(`${name}: owns its settings API and saves module settings locally`, async () => {
   store.clear(); const Request = requests[name];
     globalThis.$argument = { Storage: "Argument", LogLevel: "ERROR" };
     let response = (await Request(request(name))).$response;
@@ -75,15 +76,49 @@ test("empty arrays replace prior selections and unrelated modules/caches survive
   assert.deepEqual(JSON.parse(tab.body).data.top, [], "real plugin consumer uses the saved empty selection");
 });
 
-test("local HTML is fully embedded; settings API refuses other hosts", async () => {
-  const { settingsResponse } = await import(pathToFileURL(path.join(root, "Enhanced/src/function/settings.mjs")));
-  const response = settingsResponse({ url: "https://biliverse.github.io/settings/", method: "GET" }, {});
-  assert.equal(response.status, 200);
-  assert.match(response.headers["Content-Type"], /text\/html/);
-  assert.match(response.body, /data:image\/png;base64/);
-  assert.doesNotMatch(response.body, /(?:src|href)="https?:/);
-  assert.equal(settingsResponse({ url: "https://evil.example/settings/api/Enhanced", method: "GET" }, {}), undefined);
-  assert.equal(settingsResponse({ url: "https://app.bilibili.com/settings/api/Enhanced", method: "GET" }, {}), undefined);
+test("static pages and assets bypass every API script, including other modules", async () => {
+  for (const name of names) {
+    const { settingsResponse } = await import(pathToFileURL(path.join(root, name, "src/function/settings.mjs")));
+    for (const pathname of ["/settings/", `/settings/${name}/`, `/settings/assets/${name}.html`, "/settings/logo.png", ...names.filter(n => n !== name).map(n => `/settings/api/${n}`)]) {
+      assert.equal(settingsResponse({ url: `https://biliverse.github.io${pathname}`, method: "GET" }, {}), undefined);
+    }
+    assert.equal(settingsResponse({ url: `https://evil.example/settings/api/${name}`, method: "GET" }, {}), undefined);
+    assert.equal(settingsResponse({ url: `https://app.bilibili.com/settings/api/${name}`, method: "GET" }, {}), undefined);
+    const script = await readFile(path.join(root, name, "src/function/settings.mjs"), "utf8");
+    assert.doesNotMatch(script, /<!doctype|data:image|const page =/i);
+  }
+});
+
+test("native Mock targets resolve to Pages files and cannot intercept their own downloads or APIs", async () => {
+  const publicDir = path.join(root, "Biliverse.github.io/docs/public");
+  for (const name of names) {
+    const asset = await readFile(path.join(publicDir, `settings/assets/${name}.html`), "utf8");
+    assert.equal(asset, await readFile(path.join(publicDir, `settings/${name}/index.html`), "utf8"));
+    assert.match(asset, /data:image\/png;base64/);
+    const dir = path.join(root, name, "template");
+    for (const filename of ["surge.handlebars", "surge.dev.handlebars", "loon.handlebars", "loon.dev.handlebars"]) {
+      const template = await readFile(path.join(dir, filename), "utf8");
+      const line = template.split("\n").find(line => line.includes(`settings/assets/${name}.html`));
+      assert.ok(line, `${name}/${filename}: missing remote static Mock`);
+      assert.match(line, filename.startsWith("surge") ? /data-type=file/ : /mock-response-body data-type=html/);
+      const matcher = new RegExp(line.split(" ")[0]);
+      assert.ok(matcher.test(`https://biliverse.github.io/settings/${name}/`));
+      assert.ok(matcher.test(`https://biliverse.github.io/settings/${name}/?v=1`));
+      for (const other of ["", `assets/${name}.html`, `api/${name}`, "logo.png", ...names.filter(n => n !== name).map(n => `${n}/`)]) {
+        assert.equal(matcher.test(`https://biliverse.github.io/settings/${other}`), false);
+      }
+    }
+    for (const filename of (await readdir(dir)).filter(file => file.endsWith(".handlebars") && !file.includes("rewrite"))) {
+      const template = await readFile(path.join(dir, filename), "utf8");
+      if (!template.includes("settings\\/api\\/")) continue;
+      assert.doesNotMatch(template, /hostname = biliverse.github.io, %APPEND%/);
+      for (const line of template.split("\n").filter(line => line.includes("settings\\/api\\/"))) {
+        assert.doesNotMatch(line, /v\{\{@package,/);
+        if (line.includes("script-path=")) assert.match(line, /\/request(?:\.dev)?\.bundle\.js,/);
+      }
+    }
+  }
+  assert.deepEqual(await readFile(path.join(publicDir, "settings/logo.png")), await readFile(path.join(root, "Biliverse.github.io/settings/logo.png")));
 });
 
 test("phone/iPad entry follows official settings exactly once, including when Mine customization is disabled", async () => {
