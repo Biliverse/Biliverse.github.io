@@ -124,19 +124,20 @@ test("native Mock targets resolve to Pages files and cannot intercept their own 
   }
 });
 
-test("phone/iPad entry follows official settings exactly once, including when Mine customization is disabled", async () => {
+test("phone/iPad recommended services contain the entry exactly once, including when Mine customization is disabled", async () => {
   store.clear();
   const { addSettingsEntry } = await import(pathToFileURL(path.join(root, "Enhanced/src/function/settingsEntry.mjs")));
   for (const ipad of [false, true]) {
     const items = [{ id: 1, uri: "bilibili://user_center/setting", title: "设置" }, { id: 2, title: "后续项" }];
     const data = ipad ? { ipad_more_sections: items } : { sections_v2: [{ items }] };
     addSettingsEntry(data, ipad); addSettingsEntry(data, ipad);
-    assert.equal(items.length, 3); assert.equal(items[1].title, "Biliverse 设置"); assert.equal(items[2].id, 2);
-    assert.equal(items[1].icon, "https://biliverse.github.io/settings/logo_settings_light.png");
+    const recommended = ipad ? data.ipad_recommend_sections : data.sections_v2.find(section => section.title === "推荐服务").items;
+    assert.equal(items.length, 2); assert.equal(recommended.length, 1); assert.equal(recommended[0].title, "Biliverse 设置");
+    assert.equal(recommended[0].icon, "https://biliverse.github.io/settings/logo_settings_light.png");
   }
   globalThis.$argument = { Mine: { Switch: false }, LogLevel: "OFF" };
   const { Response } = await import(pathToFileURL(path.join(root, "Enhanced/src/process/Response.mjs")));
   const upstream = { code: 0, data: { sections_v2: [{ items: [{ uri: "bilibili://user_center/setting", title: "设置" }] }] } };
   const result = await Response({ url: "https://app.bilibili.com/x/v2/account/mine" }, { headers: { "Content-Type": "application/json" }, body: JSON.stringify(upstream) });
-  assert.equal(JSON.parse(result.body).data.sections_v2[0].items.find(item => item.uri === "https://biliverse.github.io/settings/").title, "Biliverse 设置");
+  assert.equal(JSON.parse(result.body).data.sections_v2.find(section => section.title === "推荐服务").items[0].title, "Biliverse 设置");
 });
