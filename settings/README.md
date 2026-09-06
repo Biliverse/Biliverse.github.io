@@ -1,20 +1,38 @@
 # Biliverse 本地设置
 
-页面入口位于“我的”页面的官方“设置”项之后，目标地址为 `https://biliverse.github.io/settings/`。Enhanced 负责插入入口；根页面即使插件暂时关闭也能从 GitHub Pages 打开。点击模块后，在线单页面通过绝对地址访问对应插件的本地设置接口；每个插件负责自己的分支设置 GET/POST 和资源，使用既有的 `getStorage` 读取本地配置。
+页面入口位于“我的”页面的官方“设置”项之后，目标地址为 `https://biliverse.github.io/settings/`。Enhanced 负责插入入口，根页面来自 GitHub Pages；每次进入主页面（包括浏览器后退恢复）并发 HEAD 探测四个模块，探测期间入口禁用，成功后才可点击。点击模块进入其独立静态页面，各模块只处理自己的设置 GET/POST/HEAD。
 
 ## 资源与请求
 
 | URL | 处理模块 |
 | --- | --- |
 | `https://biliverse.github.io/settings/` | GitHub Pages：根 HTML、CSS、JS、项目图片 |
+| `/settings/<Module>/` | 模块分支页；Surge/Loon/Egern 原生静态 Mock，其余直接访问 Pages |
+| `/settings/assets/<Module>.html` | 原生 Mock 的远程资源源，不匹配任何 Mock/API 规则 |
+| `/settings/logo.png` | Pages 静态图片，供 App 中的入口使用 |
 | `/settings/api/Enhanced` | Enhanced 设置处理器 |
 | `/settings/api/Global` | Global 设置处理器 |
 | `/settings/api/Redirect` | Redirect 设置处理器 |
 | `/settings/api/ADBlock` | ADBlock 设置处理器 |
 
-设置 API 由各自插件的本机代理脚本返回，全部位于 `biliverse.github.io` 命名空间。在线页面只请求自己的 `/settings/api/<Module>` 地址，插件关闭或失效时探测失败并禁用对应入口；页面自身仍可打开。它们不占用哔哩哔哩官方接口，也不需要污染 `app.bilibili.com`。HTTPS 只需对 `biliverse.github.io` 启用 MITM。
+设置 API 由各自插件的本机代理脚本返回，全部位于 `biliverse.github.io` 命名空间。页面用同源请求访问 `/settings/api/<Module>`，插件关闭或失效时探测失败并禁用对应入口；根页面仍可打开。自定义设置请求不占用官方域名，需对 `biliverse.github.io` 启用 MITM；插件原有业务的 MITM 主机保持不变。
 
-手机使用 `sections_v2[].items[]`，iPad 使用 `ipad_*_sections`。只有上游或 Enhanced 过滤后的页面仍存在官方 `bilibili://user_center/setting` 项时才插入，不猜测其它页面位置。重复处理不会重复添加。Enhanced 的 Mine 自定义开关关闭时仍可插入入口。入口图标使用现有 Biliverse GitHub 组织头像地址，HTML 内的 logo 来自 Universe `database/icon.png`，四个产品图标来自各自 `src/assets/icon_rounded_108x.png`。
+### 静态 Mock
+
+Surge 示例（位于各模块自己的模板中）：
+
+```ini
+[Map Local]
+^https://biliverse\.github\.io/settings/Enhanced/(?:\?.*)?$ data-type=file data="https://biliverse.github.io/settings/assets/Enhanced.html" status-code=200 header="Content-Type:text/html; charset=utf-8"
+```
+
+Loon 沿用仓库的旧版 Rewrite 语法，在 `[Rewrite]` 中用 `mock-response-body data-type=html data-path=<资源 URL>`。Egern 通过仓库已有 Surge 转换器生成 `map_locals`。匹配地址与下载源地址分离，避免资源下载命中自身规则。根页面、logo、其它模块页面和 API 都不匹配这条静态规则。
+
+Stash 官方当前 Mock 文档只提供 text/base64，Quantumult X 的官方静态 echo 示例仅说明本地文件，Shadowrocket 的远程文件 Mock 在本次未确认；这些模板不增加未经确认的资源参数，而由 Pages 的 `/settings/<Module>/index.html` 直接提供相同页面。所有平台的静态 HTML 均不再通过 JS 请求处理器生成。HTML 内嵌 CSS、页面 JS 和图标，原生 Mock 只需缓存一份完整 HTML。
+
+依据：[Surge Map Local](https://manual.nssurge.com/http/map-local.html)、[Loon Rewrite](https://nsloon.app/en/docs/Rewrite/)、[Stash Mock](https://stash.wiki/http-engine/rewrite#mock)、[Quantumult X 官方示例](https://github.com/crossutility/Quantumult-X/blob/master/sample.conf)。
+
+手机使用 `sections_v2[].items[]`，iPad 使用 `ipad_*_sections`。只有上游或 Enhanced 过滤后的页面仍存在官方 `bilibili://user_center/setting` 项时才插入，不猜测其它页面位置。重复处理不会重复添加。Enhanced 的 Mine 自定义开关关闭时仍可插入入口。入口图标使用 `https://biliverse.github.io/settings/logo.png`，来自 Universe `database/icon.png`；四个产品图标来自各自 `src/assets/icon_rounded_108x.png`。
 
 ## 配置语义
 
@@ -34,7 +52,7 @@ GET 返回当前脚本的实际有效配置。保存以 `BiliBili.<模块>.Setti
 
 `bilibili-form.css` 直接选取国际版 `com.bilibili.inter` 6.4.0（91000200）包内 AppSettings H5 1.1.2 的 `form-group`、`form-row`、`v-toggle` 样式，去掉 Vue 编译产生的 scope 属性。来源文件名与 SHA-256 见 `provenance.json`。保留官方组件的类名和结构，表单渲染及保存代码由本项目实现。没有复制官方业务 JS，也不依赖第三方域名的 JSBridge 权限。
 
-HTML、图片、主题变量及样式都已内嵌，不需要在线加载官方 CDN；根据 App UA 的 `themeId` 或系统深色偏好选择主题。Hilo 公开 CDN 的访问不稳定，因此没有把它作为页面运行依赖。这里的样式来源记录不等同于确认官方发布了对外开放的 SDK 或授权条款。
+HTML 内嵌图片、主题变量及样式，不需要在线加载官方 CDN；根据 App UA 的 `themeId` 或系统深色偏好选择主题。这里的样式来源记录不等同于确认官方发布了对外开放的 SDK 或授权条款。
 
 ## 开发与发布
 
@@ -47,12 +65,12 @@ node --test settings/settings.test.mjs
 node scripts/preview-settings.mjs
 ```
 
-生成器同时更新 `docs/public/settings/index.html` 和四个模块的 `src/function/settings.mjs`，不要手改这些生成文件。新增或修改 argument 时重新运行生成器。各模块继续使用原有 Rollup 和 arguments-builder 命令构建正式版/开发版脚本、Surge/Loon/Stash 等模板。纯 Rewrite 模板保持原行为。根页面使用 hash 分支导航，因此 GitHub Pages 不需要为每个模块额外部署 HTML 文件。
+生成器更新 `docs/public/settings/` 下的根页面、logo、四份 `assets/<Module>.html` 和四份 `<Module>/index.html`，同时更新四个模块的 `src/function/settings.mjs`（只含 schema 和 API 逻辑，不含 HTML）。不要手改生成文件。新增或修改 argument 时重新运行生成器。各模块继续用原有 Rollup 和 arguments-builder 构建正式版/开发版。纯 Rewrite 模板保持原行为。
 
-预览地址为 `http://127.0.0.1:8791/biliverse/settings/`，使用独立内存存储，通过实际四个 Request 处理器响应，不读取用户代理配置。预览内存数据在服务退出后消失。静态 Pages 地址只提供页面资源；本地 Mock 才提供读写能力。
+预览默认地址为 `http://127.0.0.1:8791/settings/`（可通过 `PORT` 改端口），静态文件直接读取 Pages 输出，API 调用实际四个 Request 处理器，使用独立内存存储，不读取用户代理配置。预览内存数据在服务退出后消失。
 
-发布时需要同时发布更新后的模块脚本和模块规则。只上传 Pages HTML 不会让已安装的旧模块自动支持本地接口。当前没有修改用户的现用 Surge 配置，也没有发布远端版本。
+发布时先部署 Pages 静态文件，再更新模块脚本和规则。Pages 自动工作流只监听 `main`，推送 `dev` 不会让新增资源 URL 上线；模块脚本不能弥补未部署的静态资源。不要把配置数据写入 Pages 的 `settings/api/` 目录，该路径仅用于本机脚本响应。
 
 ## 验证
 
-`settings.test.mjs` 覆盖手机/iPad 入口顺序与去重、关闭 Mine 自定义时入口保留、所有模块的参数读取/本地保存/切回参数、空数组保存后真实 Tab 消费、未知字段/非法值/重复值/跨域访问、存储写入失败、其它模块与 Caches 保留，以及无外链 HTML。浏览器预览使用同一处理器，验证响应式布局、开关和表单保存。
+`settings.test.mjs` 覆盖入口顺序与去重、配置读写、HEAD、存储失败、缓存保留、静态路径/API/跨模块边界、Mock 下载源不被再次拦截、静态源与 Pages 直接访问页一致，以及脚本不包含 HTML。Surge 静态规则另以本机 `surge-cli --check` 校验；Egern 检查转换产物。浏览器预览验证独立静态页导航及保存，不代表所有代理 App 已实机验证。
