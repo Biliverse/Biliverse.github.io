@@ -132,12 +132,12 @@ test("phone/iPad recommended services contain the entry exactly once, including 
     const data = ipad ? { ipad_more_sections: items } : { sections_v2: [{ items }] };
     addSettingsEntry(data, ipad); addSettingsEntry(data, ipad);
     const recommended = ipad ? data.ipad_recommend_sections : data.sections_v2.find(section => section.title === "推荐服务").items;
-    assert.equal(items.length, 2); assert.equal(recommended.length, 1); assert.equal(recommended[0].title, "Biliverse 设置");
+    assert.equal(items.length, 2); assert.equal(recommended.length, 1); assert.equal(recommended[0].title, "Biliverse");
     assert.equal(recommended[0].icon, "https://biliverse.github.io/settings/logo_settings_light.png");
   }
   globalThis.$argument = { Mine: { Switch: false }, LogLevel: "OFF" };
   const { Response } = await import(pathToFileURL(path.join(root, "Enhanced/src/process/Response.mjs")));
   const upstream = { code: 0, data: { sections_v2: [{ items: [{ uri: "bilibili://user_center/setting", title: "设置" }] }] } };
   const result = await Response({ url: "https://app.bilibili.com/x/v2/account/mine" }, { headers: { "Content-Type": "application/json" }, body: JSON.stringify(upstream) });
-  assert.equal(JSON.parse(result.body).data.sections_v2.find(section => section.title === "推荐服务").items[0].title, "Biliverse 设置");
+  assert.equal(JSON.parse(result.body).data.sections_v2.find(section => section.title === "推荐服务").items[0].title, "Biliverse");
 });
