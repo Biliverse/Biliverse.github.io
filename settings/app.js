@@ -3,10 +3,8 @@ const logo = "/* LOGO */";
 const content = document.querySelector("#content");
 const title = document.querySelector("#title");
 const back = document.querySelector("#back");
-const apiOrigin = "https://biliverse.github.io";
 let current, busy = false, revision = 0, toastTimer;
-const pathModule = location.pathname.match(/^\/biliverse\/settings\/([^/]+)\/?$/)?.[1];
-if (pathModule && !location.hash) location.hash = pathModule;
+const pathModule = modules.length === 1 ? modules[0].name : null;
 const uaTheme = navigator.userAgent.match(/themeId\/(\d+)/);
 if (uaTheme) document.documentElement.dataset.theme = uaTheme[1] === "2" ? "dark" : "light";
 
@@ -29,7 +27,7 @@ async function probe(module) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 3500);
   try {
-    const response = await fetch(`${apiOrigin}/settings/api/${module}`, { method: "HEAD", cache: "no-store", credentials: "omit", headers: { "X-Biliverse-Settings": "1" }, signal: controller.signal });
+    const response = await fetch(`/settings/api/${module}`, { method: "HEAD", cache: "no-store", credentials: "omit", headers: { "X-Biliverse-Settings": "1" }, signal: controller.signal });
     return response.ok;
   } catch { return false; }
   finally { clearTimeout(timer); }
@@ -39,7 +37,7 @@ async function api(module, values) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
   try {
-    const response = await fetch(`${apiOrigin}/settings/api/${module}`, {
+    const response = await fetch(`/settings/api/${module}`, {
       method: values ? "POST" : "GET", cache: "no-store", credentials: "omit", signal: controller.signal,
       headers: { "X-Biliverse-Settings": "1", ...(values ? { "Content-Type": "application/json" } : {}) },
       ...(values ? { body: JSON.stringify({ values }) } : {}),
@@ -103,13 +101,18 @@ function showHome() {
   content.append(brand);
   const rows = group("");
   for (const module of modules) {
-    const link = element("a"); link.href = `#${module.name}`; link.dataset.module = module.name;
+    const link = element("a"); link.dataset.module = module.name;
+    link.setAttribute("aria-disabled", "true"); link.classList.add("module-disabled");
     const item = row(module.name, module.description);
     const icon = element("img", "module-icon"); icon.src = module.icon; icon.alt = "";
     item.prepend(icon); item.append(element("span", "chevron", "›"));
     link.append(item); rows.append(link);
     probe(module.name).then(available => {
-      if (available) return;
+      if (available) {
+        link.href = `/settings/${module.name}/`;
+        link.removeAttribute("aria-disabled"); link.classList.remove("module-disabled");
+        return;
+      }
       link.removeAttribute("href"); link.setAttribute("aria-disabled", "true"); link.classList.add("module-disabled");
       item.append(element("span", "module-status", "未响应"));
     });
@@ -174,7 +177,7 @@ function showEditor(field) {
 
 async function render() {
   const version = ++revision;
-  const [module, key] = location.hash.slice(1).split("/");
+  const [module, key] = (location.hash.slice(1) || pathModule || "").split("/");
   content.replaceChildren(); content.className = "page";
   back.hidden = !module;
   if (!module) { current = undefined; showHome(); return; }
@@ -196,6 +199,11 @@ async function render() {
     const retry = element("button", "primary", "重新连接"); retry.onclick = render; content.append(retry);
   }
 }
-back.onclick = () => { if (!busy) location.hash = location.hash.includes("/") ? location.hash.slice(1).split("/")[0] : ""; };
+back.onclick = () => {
+  if (busy) return;
+  if (location.hash.includes("/")) location.hash = current.module;
+  else location.assign("/settings/");
+};
 window.addEventListener("hashchange", render);
+window.addEventListener("pageshow", event => { if (event.persisted) render(); });
 render();

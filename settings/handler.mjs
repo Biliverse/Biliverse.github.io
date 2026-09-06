@@ -1,22 +1,16 @@
 import { $app, Storage, Lodash as _ } from "@nsnanocat/util";
 
-// MODULE, fields and page are injected by scripts/build-settings.mjs.
+// MODULE and fields are injected by scripts/build-settings.mjs.
 export function settingsResponse(request, settings) {
 	const url = new URL(request.url);
-	if (url.origin !== "https://biliverse.github.io" || !url.pathname.startsWith("/settings/")) return;
-	const requestedModule = url.pathname.match(/^\/settings\/api\/([^/]+)$/)?.[1];
-	const moduleName = requestedModule ?? MODULE;
-	const moduleFields = fieldsByModule?.[moduleName] ?? fields;
+	if (url.origin !== "https://biliverse.github.io" || url.pathname !== `/settings/api/${MODULE}`) return;
+	const moduleName = MODULE;
+	const moduleFields = fields;
 	const storedSettings = Storage.getItem("BiliBili", {})?.[moduleName]?.Settings ?? {};
 	const moduleSettings = storedSettings.Storage === "PersistentStore" ? storedSettings : (moduleName === MODULE ? settings : {});
 	const headers = { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 	const reply = (status, data) => ({ status, headers, body: JSON.stringify(data) });
 	if ($app === "Worker") return reply(501, { error: "设置页面仅支持本地插件脚本，不支持云端 Rewrite 模式。" });
-	if (page && (url.pathname === "/settings/" || url.pathname === `/settings/${MODULE}/`)) {
-		if (request.method !== "GET") return reply(405, { error: "仅支持 GET" });
-		return { status: 200, headers: { ...headers, "Content-Type": "text/html; charset=utf-8", "Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }, body: page };
-	}
-	if (!requestedModule || !fieldsByModule?.[moduleName]) return;
 	const requestHeaders = Object.fromEntries(Object.entries(request.headers ?? {}).map(([key, value]) => [key.toLowerCase(), value]));
 	if (requestHeaders["x-biliverse-settings"] !== "1" || (requestHeaders.origin && requestHeaders.origin !== url.origin)) return reply(403, { error: "请从 Biliverse 设置页面访问。" });
 	if (request.method === "HEAD") return { status: 200, headers, body: "" };
