@@ -10,6 +10,16 @@ const check = process.argv.includes("--check");
 const read = name => readFile(path.join(source, name), "utf8");
 const modules = [];
 const schemas = {};
+const outputs = new Map();
+async function themedIcon(directory, prefix) {
+  const variants = {};
+  for (const mode of ["light", "dark"]) {
+    const filename = `${prefix}_settings_${mode}.png`;
+    const png = await readFile(path.join(directory, filename));
+    variants[mode] = `data:image/png;base64,${png.toString("base64")}`;
+  }
+  return variants;
+}
 for (const name of names) {
   const repo = path.join(repositories, name);
   const { argsFull } = await import(pathToFileURL(path.join(repo, "arguments-builder.full.config.ts")));
@@ -19,16 +29,18 @@ for (const name of names) {
   }));
   if (!schemas[name].some(field => field.key === "Storage")) schemas[name].push({ key: "Storage", name: "[储存] 配置类型", type: "string", defaultValue: "Argument", description: "选择模块参数、持久化设置或默认配置。", options: [{ key: "Argument", label: "模块参数" }, { key: "PersistentStore", label: "本地设置" }, { key: "database", label: "默认配置" }] });
   const pkg = JSON.parse(await readFile(path.join(repo, "package.json"), "utf8"));
-  const icon = await readFile(path.join(repo, "src/assets/icon_rounded_108x.png"));
-  modules.push({ name, description: pkg.description.split("\n").at(-1), icon: `data:image/png;base64,${icon.toString("base64")}` });
+  const icon = await themedIcon(path.join(repo, "src/assets"), "icon");
+  modules.push({ name, description: pkg.description.split("\n").at(-1), icon });
 }
-const logo = `data:image/png;base64,${(await readFile(path.join(source, "logo.png"))).toString("base64")}`;
-const js = (await read("app.js")).replace("/* MODULES */", JSON.stringify(modules)).replace("/* LOGO */", logo);
+const logo = await themedIcon(source, "logo");
+const js = (await read("app.js")).replace("/* MODULES */", JSON.stringify(modules)).replace("/* LOGO */", JSON.stringify(logo));
 const html = (await read("index.html")).replace("/* FORM_CSS */", await read("bilibili-form.css")).replace("/* APP_CSS */", await read("app.css")).replace("/* APP_JS */", js);
-const outputs = new Map([
-  [path.join(root, "docs/public/settings/index.html"), html],
-  [path.join(root, "docs/public/settings/logo.png"), await readFile(path.join(source, "logo.png"))],
-]);
+outputs.set(path.join(root, "docs/public/settings/index.html"), html);
+outputs.set(path.join(root, "docs/public/settings/logo.png"), await readFile(path.join(source, "logo.png")));
+for (const mode of ["light", "dark"]) {
+  const filename = `logo_settings_${mode}.png`;
+  outputs.set(path.join(root, "docs/public/settings", filename), await readFile(path.join(source, filename)));
+}
 for (const name of names) {
   const moduleHtml = html.replace(`const modules = ${JSON.stringify(modules)};`, `const modules = ${JSON.stringify(modules.filter(module => module.name === name))};`);
   outputs.set(path.join(root, `docs/public/settings/assets/${name}.html`), moduleHtml);

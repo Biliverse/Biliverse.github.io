@@ -10,6 +10,7 @@ globalThis.$persistentStore = { read: key => store.get(key) ?? null, write: (val
 globalThis.$argument = {};
 const requests = {};
 const assets = new Map([["/settings/", "settings/index.html"], ["/settings/logo.png", "settings/logo.png"]]);
+for (const mode of ["light", "dark"]) assets.set(`/settings/logo_settings_${mode}.png`, `settings/logo_settings_${mode}.png`);
 for (const name of ["Enhanced", "Global", "Redirect", "ADBlock"]) {
   requests[name] = (await import(pathToFileURL(path.resolve(import.meta.dirname, "../..", name, "src/process/Request.mjs")))).Request;
   assets.set(`/settings/${name}/`, `settings/${name}/index.html`);

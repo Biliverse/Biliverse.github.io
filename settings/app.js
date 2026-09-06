@@ -1,5 +1,5 @@
 const modules = /* MODULES */;
-const logo = "/* LOGO */";
+const logo = /* LOGO */;
 const content = document.querySelector("#content");
 const title = document.querySelector("#title");
 const back = document.querySelector("#back");
@@ -13,6 +13,16 @@ function element(tag, className, text) {
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
+}
+
+function themedImage(variants, className, alt) {
+  const picture = element("picture", className);
+  const source = element("source");
+  source.media = uaTheme ? (uaTheme[1] === "2" ? "all" : "not all") : "(prefers-color-scheme: dark)";
+  source.srcset = variants.dark;
+  const image = element("img"); image.src = variants.light; image.alt = alt;
+  picture.append(source, image);
+  return picture;
 }
 
 function toast(message) {
@@ -96,7 +106,7 @@ async function save(field, value) {
 function showHome() {
   title.textContent = "Biliverse 设置";
   const brand = element("div", "brand");
-  const image = element("img"); image.src = logo; image.alt = "Biliverse";
+  const image = themedImage(logo, "brand-logo", "Biliverse");
   brand.append(image, element("h2", "", "Biliverse"), element("p", "", "哔哩哔哩功能优化及增强"));
   content.append(brand);
   const rows = group("");
@@ -104,7 +114,7 @@ function showHome() {
     const link = element("a"); link.dataset.module = module.name;
     link.setAttribute("aria-disabled", "true"); link.classList.add("module-disabled");
     const item = row(module.name, module.description);
-    const icon = element("img", "module-icon"); icon.src = module.icon; icon.alt = "";
+    const icon = themedImage(module.icon, "module-icon", "");
     item.prepend(icon); item.append(element("span", "chevron", "›"));
     link.append(item); rows.append(link);
     probe(module.name).then(available => {
