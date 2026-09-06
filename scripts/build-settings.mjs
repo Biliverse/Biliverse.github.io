@@ -34,7 +34,7 @@ for (const name of names) {
 }
 const logo = await themedIcon(source, "logo");
 const js = (await read("app.js")).replace("/* MODULES */", JSON.stringify(modules)).replace("/* LOGO */", JSON.stringify(logo));
-const html = (await read("index.html")).replace("/* FORM_CSS */", await read("bilibili-form.css")).replace("/* APP_CSS */", await read("app.css")).replace("/* APP_JS */", js);
+const html = (await read("index.html")).replace("/* FORM_CSS */", await read("bilibili-form.css")).replace("/* APP_CSS */", await read("app.css")).replace("/* SELF_SERVICE_CSS */", await read("bilibili-self-service.css")).replace("/* APP_JS */", js);
 outputs.set(path.join(root, "docs/public/settings/index.html"), html);
 outputs.set(path.join(root, "docs/public/settings/logo.png"), await readFile(path.join(source, "logo.png")));
 for (const mode of ["light", "dark"]) {

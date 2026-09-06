@@ -93,6 +93,7 @@ test("native Mock targets resolve to Pages files and cannot intercept their own 
   const publicDir = path.join(root, "Biliverse.github.io/docs/public");
   for (const name of names) {
     const asset = await readFile(path.join(publicDir, `settings/assets/${name}.html`), "utf8");
+    assert.ok(asset.includes('<link rel="stylesheet" href="https://s1.hdslb.com/bfs/static/2233-monorepo/customer-service-h5/static/css/index.545c1c91.css">'));
     assert.equal(asset, await readFile(path.join(publicDir, `settings/${name}/index.html`), "utf8"));
     assert.match(asset, /data:image\/png;base64/);
     const dir = path.join(root, name, "template");

@@ -1,0 +1,25 @@
+/* Overrides for the official customer-service-h5 stylesheet loaded by index.html.
+ * Its rem values use a 125px root at a 375px viewport; fixed px here.
+ * Flex layout, orientation, alignment and icon filters come from the official CSS.
+ */
+.self-panel{margin-bottom:8px;padding:12px 6px 0}
+.self-panel .header{padding:0 6px;font-size:16px;margin:0}
+.self-panel .container{margin-top:16px}
+.self-panel .self-item.is-zh .name{margin-top:8px;white-space:normal}
+
+/* Biliverse transparent artwork and connection state, within the official structure. */
+.self-panel .self-item{width:25%;min-width:0;min-height:112px;padding:0 2px 12px;position:relative}
+.self-panel .self-item .logo{width:56px;height:56px;border-radius:50%;padding:10px;background:var(--service-icon-bg);display:block}
+.self-panel .logo img{display:block;width:100%;height:100%;object-fit:contain}
+.self-panel .self-item .name{font-size:13px;line-height:20px;overflow-wrap:anywhere}
+.self-panel .module-status{display:block;text-align:center;min-height:16px;margin:2px 0 0;font-size:11px;line-height:16px;color:var(--text3)}
+.self-panel .self-item.module-disabled .module-status{margin-left:0}
+.self-panel .self-item:focus-visible{outline-offset:-2px}
+.self-panel .self-item:not(.module-disabled):active .logo{transform:scale(.94)}
+:root{--service-pink:#fff0f5;--service-blue:#e9f6ff;--service-violet:#f2efff;--service-yellow:#fff4df}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--service-pink:#422731;--service-blue:#223b4a;--service-violet:#332c46;--service-yellow:#453923}}
+:root[data-theme=dark]{--service-pink:#422731;--service-blue:#223b4a;--service-violet:#332c46;--service-yellow:#453923}
+.self-panel [data-module=Enhanced]{--service-icon-bg:var(--service-pink)}
+.self-panel [data-module=Global]{--service-icon-bg:var(--service-blue)}
+.self-panel [data-module=Redirect]{--service-icon-bg:var(--service-violet)}
+.self-panel [data-module=ADBlock]{--service-icon-bg:var(--service-yellow)}

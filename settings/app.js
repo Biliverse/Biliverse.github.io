@@ -104,27 +104,33 @@ async function save(field, value) {
 }
 
 function showHome() {
-  title.textContent = "Biliverse 设置";
+  title.textContent = "Biliverse";
   const brand = element("div", "brand");
   const image = themedImage(logo, "brand-logo", "Biliverse");
   brand.append(image, element("h2", "", "Biliverse"), element("p", "", "哔哩哔哩功能优化及增强"));
   content.append(brand);
-  const rows = group("");
+  const section = element("section", "self-panel is-zh");
+  section.append(element("h2", "header", "插件"));
+  const container = element("div", "container");
+  const scrollView = element("div", "scroll-view");
+  const rows = element("div", "scroll");
+  scrollView.append(rows); container.append(scrollView); section.append(container); content.append(section);
   for (const module of modules) {
-    const link = element("a"); link.dataset.module = module.name;
+    const link = element("a", "self-item is-zh"); link.dataset.module = module.name;
+    link.setAttribute("role", "link"); link.setAttribute("aria-label", module.name); link.title = module.description;
     link.setAttribute("aria-disabled", "true"); link.classList.add("module-disabled");
-    const item = row(module.name, module.description);
-    const icon = themedImage(module.icon, "module-icon", "");
-    item.prepend(icon); item.append(element("span", "chevron", "›"));
-    link.append(item); rows.append(link);
+    const icon = themedImage(module.icon, "logo", "");
+    const status = element("span", "module-status", "检测中");
+    link.append(icon, element("span", "name", module.name), status); rows.append(link);
     probe(module.name).then(available => {
       if (available) {
         link.href = `/settings/${module.name}/`;
         link.removeAttribute("aria-disabled"); link.classList.remove("module-disabled");
+        status.textContent = "";
         return;
       }
       link.removeAttribute("href"); link.setAttribute("aria-disabled", "true"); link.classList.add("module-disabled");
-      item.append(element("span", "module-status", "未响应"));
+      status.textContent = "未响应";
     });
   }
   content.append(element("p", "source", "设置仅保存在当前代理工具中"));

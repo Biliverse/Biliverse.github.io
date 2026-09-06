@@ -1,6 +1,6 @@
 # Biliverse 本地设置
 
-页面入口位于“我的”页面的官方“设置”项之后，目标地址为 `https://biliverse.github.io/settings/`。Enhanced 负责插入入口，根页面来自 GitHub Pages；每次进入主页面（包括浏览器后退恢复）并发 HEAD 探测四个模块，探测期间入口禁用，成功后才可点击。点击模块进入其独立静态页面，各模块只处理自己的设置 GET/POST/HEAD。
+页面入口名为 `Biliverse`，位于“我的”页面“推荐服务”首位，目标地址为 `https://biliverse.github.io/settings/`。Enhanced 负责插入入口，根页面来自 GitHub Pages；每次进入主页面（包括浏览器后退恢复）并发 HEAD 探测四个模块，探测期间入口禁用，成功后才可点击。点击模块进入其独立静态页面，各模块只处理自己的设置 GET/POST/HEAD。
 
 ## 资源与请求
 
@@ -28,11 +28,11 @@ Surge 示例（位于各模块自己的模板中）：
 
 Loon 沿用仓库的旧版 Rewrite 语法，在 `[Rewrite]` 中用 `mock-response-body data-type=html data-path=<资源 URL>`。Egern 通过仓库已有 Surge 转换器生成 `map_locals`。匹配地址与下载源地址分离，避免资源下载命中自身规则。根页面、logo、其它模块页面和 API 都不匹配这条静态规则。
 
-Stash 官方当前 Mock 文档只提供 text/base64，Quantumult X 的官方静态 echo 示例仅说明本地文件，Shadowrocket 的远程文件 Mock 在本次未确认；这些模板不增加未经确认的资源参数，而由 Pages 的 `/settings/<Module>/index.html` 直接提供相同页面。所有平台的静态 HTML 均不再通过 JS 请求处理器生成。HTML 内嵌 CSS、页面 JS 和图标，原生 Mock 只需缓存一份完整 HTML。
+Stash 官方当前 Mock 文档只提供 text/base64，Quantumult X 的官方静态 echo 示例仅说明本地文件，Shadowrocket 的远程文件 Mock 在本次未确认；这些模板不增加未经确认的资源参数，而由 Pages 的 `/settings/<Module>/index.html` 直接提供相同页面。所有平台的静态 HTML 均不再通过 JS 请求处理器生成。HTML 内嵌页面 JS、图标和本地适配 CSS，官方客服基础 CSS 由浏览器额外加载。
 
 依据：[Surge Map Local](https://manual.nssurge.com/http/map-local.html)、[Loon Rewrite](https://nsloon.app/en/docs/Rewrite/)、[Stash Mock](https://stash.wiki/http-engine/rewrite#mock)、[Quantumult X 官方示例](https://github.com/crossutility/Quantumult-X/blob/master/sample.conf)。
 
-手机使用 `sections_v2[].items[]`，iPad 使用 `ipad_*_sections`。只有上游或 Enhanced 过滤后的页面仍存在官方 `bilibili://user_center/setting` 项时才插入，不猜测其它页面位置。重复处理不会重复添加。Enhanced 的 Mine 自定义开关关闭时仍可插入入口。入口图标使用 `https://biliverse.github.io/settings/logo_settings_light.png`，为透明底新版；原有 `logo.png` 保留不变。
+手机使用 `sections_v2` 中标题为“推荐服务”的分组，缺失时在“更多服务”前创建；iPad 使用 `ipad_recommend_sections`。插入前清理旧分组中的同 URI 入口，重复处理不会重复添加。原快捷区四项不变，Enhanced 的 Mine 自定义开关关闭时仍可插入入口。入口图标使用 `https://biliverse.github.io/settings/logo_settings_light.png`，为透明底新版；原有 `logo.png` 保留不变。
 
 ### 设置图标
 
@@ -58,9 +58,11 @@ GET 返回当前脚本的实际有效配置。保存以 `BiliBili.<模块>.Setti
 
 ## 样式来源
 
+页面通过 `index.html` 的 stylesheet 链接直接加载官方移动端客服中心 CSS，四个圆形模块入口使用其中 `self-panel` / `self-item` 的布局规则。`bilibili-self-service.css` 仅保留固定尺寸、主题颜色和状态适配，不再复制基础 flex 布局。客服中心的页面访问、源码证据和适配范围见 [独立调研记录](customer-service-research.md)。不引入官方客服 JSBridge 和埋点；二级设置表单保持原样。
+
 `bilibili-form.css` 直接选取国际版 `com.bilibili.inter` 6.4.0（91000200）包内 AppSettings H5 1.1.2 的 `form-group`、`form-row`、`v-toggle` 样式，去掉 Vue 编译产生的 scope 属性。来源文件名与 SHA-256 见 `provenance.json`。保留官方组件的类名和结构，表单渲染及保存代码由本项目实现。没有复制官方业务 JS，也不依赖第三方域名的 JSBridge 权限。
 
-HTML 内嵌图片、主题变量及样式，不需要在线加载官方 CDN；根据 App UA 的 `themeId` 或系统深色偏好选择主题。这里的样式来源记录不等同于确认官方发布了对外开放的 SDK 或授权条款。
+HTML 内嵌图片、主题变量和本地适配 CSS；客服中心基础样式直接加载官方 CDN 的带哈希版本链接，首次打开需要该资源可达，原生 HTML Mock 本身不会把外部 CSS 内嵌。浏览器可按服务器缓存规则缓存样式。根据 App UA 的 `themeId` 或系统深色偏好选择主题。这里的样式来源记录不等同于确认官方发布了对外开放的 SDK 或授权条款。
 
 ## 开发与发布
 
