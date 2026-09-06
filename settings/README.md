@@ -32,7 +32,15 @@ Stash 官方当前 Mock 文档只提供 text/base64，Quantumult X 的官方静�
 
 依据：[Surge Map Local](https://manual.nssurge.com/http/map-local.html)、[Loon Rewrite](https://nsloon.app/en/docs/Rewrite/)、[Stash Mock](https://stash.wiki/http-engine/rewrite#mock)、[Quantumult X 官方示例](https://github.com/crossutility/Quantumult-X/blob/master/sample.conf)。
 
-手机使用 `sections_v2[].items[]`，iPad 使用 `ipad_*_sections`。只有上游或 Enhanced 过滤后的页面仍存在官方 `bilibili://user_center/setting` 项时才插入，不猜测其它页面位置。重复处理不会重复添加。Enhanced 的 Mine 自定义开关关闭时仍可插入入口。入口图标使用 `https://biliverse.github.io/settings/logo.png`，来自 Universe `database/icon.png`；四个产品图标来自各自 `src/assets/icon_rounded_108x.png`。
+手机使用 `sections_v2[].items[]`，iPad 使用 `ipad_*_sections`。只有上游或 Enhanced 过滤后的页面仍存在官方 `bilibili://user_center/setting` 项时才插入，不猜测其它页面位置。重复处理不会重复添加。Enhanced 的 Mine 自定义开关关闭时仍可插入入口。入口图标使用 `https://biliverse.github.io/settings/logo_settings_light.png`，为透明底新版；原有 `logo.png` 保留不变。
+
+### 设置图标
+
+主图标新增 `settings/logo_settings_light.png`、`logo_settings_dark.png`，四个产品在各自 `src/assets/` 新增 `icon_settings_light.png`、`icon_settings_dark.png`。来源分别是原始 `settings/logo.png` 和各项目透明版 `icon.png`，不再使用带白底的 rounded 图标。按非零 Alpha 的最小边界裁切，居中补齐正方形后等比缩放为 256×256；非正方形图案保留必要留白，不拉伸、不切掉内容。
+
+亮色版保持原图颜色，暗色版 RGB 向白色提亮 12%，两版 Alpha 完全一致。页面用 `picture` 选择资源：App UA 的 `themeId` 优先，否则跟随 `prefers-color-scheme` 并响应系统切换。原生“我的”入口只有已确认的单一 `icon` 字段，使用两种背景均可辨识的透明亮色版，不虚构夜间图片字段。
+
+使用 Python 3 + Pillow 运行 `python3 scripts/prepare-settings-icons.py` 可重复生成新增文件，`python3 settings/icons.test.py` 验证 Alpha、居中、尺寸及原图 SHA-256；来源记录见 `icons-manifest.json`。原图及旧发布文件不覆盖。生成后运行下面的页面构建命令更新 HTML 内嵌资源。
 
 ## 配置语义
 

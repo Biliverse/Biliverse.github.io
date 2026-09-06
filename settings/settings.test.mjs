@@ -119,6 +119,9 @@ test("native Mock targets resolve to Pages files and cannot intercept their own 
     }
   }
   assert.deepEqual(await readFile(path.join(publicDir, "settings/logo.png")), await readFile(path.join(root, "Biliverse.github.io/settings/logo.png")));
+  for (const mode of ["light", "dark"]) {
+    assert.deepEqual(await readFile(path.join(publicDir, `settings/logo_settings_${mode}.png`)), await readFile(path.join(root, `Biliverse.github.io/settings/logo_settings_${mode}.png`)));
+  }
 });
 
 test("phone/iPad entry follows official settings exactly once, including when Mine customization is disabled", async () => {
@@ -129,6 +132,7 @@ test("phone/iPad entry follows official settings exactly once, including when Mi
     const data = ipad ? { ipad_more_sections: items } : { sections_v2: [{ items }] };
     addSettingsEntry(data, ipad); addSettingsEntry(data, ipad);
     assert.equal(items.length, 3); assert.equal(items[1].title, "Biliverse 设置"); assert.equal(items[2].id, 2);
+    assert.equal(items[1].icon, "https://biliverse.github.io/settings/logo_settings_light.png");
   }
   globalThis.$argument = { Mine: { Switch: false }, LogLevel: "OFF" };
   const { Response } = await import(pathToFileURL(path.join(root, "Enhanced/src/process/Response.mjs")));
