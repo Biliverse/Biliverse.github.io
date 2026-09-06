@@ -1,0 +1,67 @@
+[
+  {
+    "name": "Biliverse",
+    "source": "Biliverse.github.io/settings/logo.png",
+    "sha256": "6dd50e53cf9d86577f74dd0f97bc6350e2287ee887df0a9b3c93c1c5f2549b49",
+    "alphaBounds": [
+      100,
+      260,
+      922,
+      764
+    ],
+    "squareSize": 822,
+    "outputSize": 256
+  },
+  {
+    "name": "Enhanced",
+    "source": "Enhanced/src/assets/icon.png",
+    "sha256": "474ae7c7c32bab475cda004e4a387d083475a4236980afa3ab041e6109009b7c",
+    "alphaBounds": [
+      131,
+      134,
+      993,
+      921
+    ],
+    "squareSize": 862,
+    "outputSize": 256
+  },
+  {
+    "name": "Global",
+    "source": "Global/src/assets/icon.png",
+    "sha256": "94b74a7689d157aa04c2bb4fefbe1928704f93320ba235bce5bfd4455227374f",
+    "alphaBounds": [
+      131,
+      134,
+      993,
+      921
+    ],
+    "squareSize": 862,
+    "outputSize": 256
+  },
+  {
+    "name": "Redirect",
+    "source": "Redirect/src/assets/icon.png",
+    "sha256": "14d96c268e402969497c53d11416a07fde25329de2af1aa20fef5a20693217b1",
+    "alphaBounds": [
+      131,
+      173,
+      994,
+      960
+    ],
+    "squareSize": 863,
+    "outputSize": 256
+  },
+  {
+    "name": "ADBlock",
+    "source": "ADBlock/src/assets/icon.png",
+    "sha256": "1ccd3584a8ec5b0a298e79e8a21ce8d6da6908892abed2080d8e23c62716009c",
+    "alphaBounds": [
+      131,
+      173,
+      991,
+      957
+    ],
+    "squareSize": 860,
+    "outputSize": 256
+  }
+]
