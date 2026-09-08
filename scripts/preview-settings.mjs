@@ -17,7 +17,7 @@ globalThis.$httpClient = { get: async (request, done) => {
 const requests = {};
 const assets = new Map([["/settings/", "settings/index.html"], ["/settings/logo.png", "settings/logo.png"]]);
 assets.set("/settings/Enhanced", "settings/Enhanced/index.html");
-for (const name of ["index.html", "app.mjs", "panel.css", "biliverse.css", "Enhanced.boxjs.json"]) assets.set(`/settings/assets/${name}`, `settings/assets/${name}`);
+for (const name of ["index.html", "app.mjs", "panel.css", "home.css", "site.boxjs.json", "Enhanced.boxjs.json"]) assets.set(`/settings/assets/${name}`, `settings/assets/${name}`);
 for (const mode of ["light", "dark"]) assets.set(`/settings/logo_settings_${mode}.png`, `settings/logo_settings_${mode}.png`);
 for (const name of ["Enhanced", "Global", "Redirect", "ADBlock"]) {
   for (const mode of ["light", "dark"]) assets.set(`/settings/assets/${name}_${mode}.png`, `settings/assets/${name}_${mode}.png`);
