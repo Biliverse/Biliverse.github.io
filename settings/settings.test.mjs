@@ -10,7 +10,8 @@ let writable = true;
 globalThis.$environment = { "surge-version": "settings-test" };
 globalThis.$persistentStore = { read: key => store.get(key) ?? null, write: (value, key) => { if (!writable) return false; store.set(key, value); return true; } };
 globalThis.$argument = {};
-const names = ["Enhanced", "Global", "Redirect", "ADBlock"];
+// Enhanced is covered by Enhanced/tests/preferences.test.mjs after its migration.
+const names = ["Global", "Redirect", "ADBlock"];
 const requests = {};
 for (const name of names) requests[name] = (await import(pathToFileURL(path.join(root, name, "src/process/Request.mjs")))).Request;
 function request(name, method = "GET", values, headers = {}) {
@@ -45,35 +46,6 @@ for (const name of names) test(`${name}: HEAD probe is read-only`, async () => {
   assert.equal(response.status, 200);
   assert.equal(response.body, "");
   assert.equal(store.size, 0);
-});
-
-test("reject unknown fields, invalid enum/types, duplicate choices and cross-origin writes without changing storage", async () => {
-  store.clear(); globalThis.$argument = { LogLevel: "OFF" };
-  const Request = requests.Enhanced;
-  for (const values of [{ Unknown: true }, { "Home.Switch": "yes" }, { LogLevel: "SECRET" }, { "Home.Tab": ["recommend", "recommend"] }, JSON.parse('{"__proto__":{"polluted":true}}')]) {
-    assert.equal((await Request(request("Enhanced", "POST", values))).$response.status, 400);
-  }
-  assert.equal((await Request(request("Enhanced", "POST", { LogLevel: "OFF" }, { Origin: "https://example.org" }))).$response.status, 403);
-  const missing = request("Enhanced", "POST", { LogLevel: "OFF" }); delete missing.headers["X-Biliverse-Settings"];
-  assert.equal((await Request(missing)).$response.status, 403);
-  assert.equal(store.size, 0);
-  assert.equal({}.polluted, undefined);
-  writable = false;
-  assert.equal((await Request(request("Enhanced", "POST", { LogLevel: "OFF" }))).$response.status, 500);
-  writable = true;
-});
-
-test("empty arrays replace prior selections and unrelated modules/caches survive saves", async () => {
-  store.clear(); globalThis.$argument = { LogLevel: "OFF" };
-  const Request = requests.Enhanced;
-  store.set("BiliBili", JSON.stringify({ Global: { Settings: { Locales: ["HKG"] } }, Enhanced: { Caches: { sentinel: 42 } } }));
-  assert.equal((await Request(request("Enhanced", "POST", { "Home.Top": [], Storage: "PersistentStore" }))).$response.status, 200);
-  assert.deepEqual(JSON.parse((await Request(request("Enhanced"))).$response.body).values["Home.Top"], []);
-  const saved = JSON.parse(store.get("BiliBili"));
-  assert.deepEqual(saved.Global.Settings.Locales, ["HKG"]);
-  assert.equal(saved.Enhanced.Caches.sentinel, 42);
-  const tab = (await Request({ url: "https://app.bilibili.com/x/resource/show/tab/v2", method: "GET", headers: {} })).$response;
-  assert.deepEqual(JSON.parse(tab.body).data.top, [], "real plugin consumer uses the saved empty selection");
 });
 
 test("static pages and assets bypass every API script, including other modules", async () => {
