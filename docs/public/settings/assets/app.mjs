@@ -400,17 +400,19 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 	};
 	const shell = node("div", "pp-panel");
 	const header = node("header", "pp-header");
-	const back = node("button", "pp-back", "返回");
+	const back = node("button", "pp-back", "‹");
+	back.setAttribute("aria-label", "返回");
 	back.type = "button";
 	const heading = node("h1", "pp-title", title);
 	const viewport = node("div", "pp-viewport");
 	const toast = node("div", "pp-toast");
 	toast.setAttribute("role", "status");
 	toast.hidden = true;
-	header.append(back, heading);
+	header.append(back, heading, node("span", "pp-nav-spacer"));
 	shell.append(header, viewport, toast);
 	root.append(shell);
 	let timer,
+		secondaryRoute,
 		routedPath,
 		generation = 0,
 		active = null,
@@ -505,40 +507,68 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 		const view = node("section", "pp-fields");
 		/** @type {Array<() => void>} 挂载后执行的多行高度更新 / Textarea sizing callbacks run after mounting. */
 		const growingInputs = [];
+		const editors = new Map();
+		const summaries = [];
+		const groups = new Map();
+		const scrollPositions = new WeakMap();
+		let activeEditor;
+		let queue = Promise.resolve(),
+			pendingWrites = 0;
 		/**
-		 * 写入期间统一切换控件禁用状态。
-		 * Toggle all control disabled states during mutations.
-		 * @param {boolean} disabled 是否禁用 / Whether controls are disabled.
+		 * 根据 hash 切换多选页，保留上级 DOM 和滚动位置。
+		 * Switch multi-select views by hash while retaining parent DOM and scroll position.
 		 * @returns {void} 无返回值 / No return value.
 		 */
-		const disableControls = disabled => {
-			view.querySelectorAll("button,input,select,textarea").forEach(input => {
-				input.disabled = disabled;
-			});
+		const showEditor = () => {
+			let key;
+			try {
+				key = decodeURIComponent(window.location.hash.slice(1));
+			} catch {
+				key = "";
+			}
+			const editor = editors.get(key);
+			const previous = activeEditor?.node ?? view;
+			const next = editor?.node ?? view;
+			if (previous !== next) {
+				scrollPositions.set(previous, previous.scrollTop);
+				previous.remove();
+				viewport.append(next);
+				next.scrollTop = scrollPositions.get(next) ?? 0;
+				if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) next.animate([{ transform: `translateX(${editor ? 100 : -100}%)` }, { transform: "translateX(0)" }], { duration: 260, easing: "cubic-bezier(.22,.61,.36,1)" });
+			}
+			activeEditor = editor;
+			heading.textContent = editor?.title ?? definition.metadata?.name ?? active;
+			back.disabled = saving || (!editor && window.history.length <= 1);
 		};
+		secondaryRoute = showEditor;
 		/**
-		 * 执行页面操作，期间锁定控件，完成后处理延后的导航。
-		 * Run a page action with controls locked, then process deferred navigation.
+		 * 串行执行页面操作，输入可继续编辑，完成后处理延后导航。
+		 * Serialize page actions while inputs remain editable, then process deferred navigation.
 		 * @param {() => Promise<void>} action 请求或写入 / Request or mutation.
 		 * @param {() => void} success 成功后的局部更新 / Local update after success.
+		 * @param {() => void} [failure] 失败后恢复当前输入 / Restore the current input on failure.
 		 * @returns {Promise<void>} 操作完成 / Operation completion.
 		 */
-		async function perform(action, success) {
-			if (saving) return;
+		function perform(action, success, failure = () => {}) {
+			pendingWrites++;
 			saving = true;
 			back.disabled = true;
-			disableControls(true);
-			try {
-				await action();
-				if (!destroyed) success();
-			} catch {
-				/* 请求层已通知错误 / The request layer has already reported the error. */
-			} finally {
-				saving = false;
-				back.disabled = window.history.length <= 1;
-				disableControls(false);
-				if (!destroyed && pendingRoute) route();
-			}
+			return (queue = queue
+				.then(action)
+				.then(() => {
+					if (!destroyed) success();
+				})
+				.catch(() => {
+					/* 请求层已通知错误 / The request layer has already reported the error. */
+					if (!destroyed) failure();
+				})
+				.finally(() => {
+					pendingWrites--;
+					saving = pendingWrites > 0;
+					if (destroyed && !saving) client.leave(active);
+					back.disabled = saving || (!activeEditor && window.history.length <= 1);
+					if (!saving && !destroyed && pendingRoute) route();
+				}));
 		}
 		const metadata = definition.metadata;
 		if (metadata) {
@@ -575,14 +605,27 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 			view.append(info);
 		}
 		for (const field of definition.fields) {
-			const row = node("fieldset", "pp-field");
-			row.append(node("legend", "", field.name));
-			if (field.description) row.append(node("p", "pp-description", field.description));
+			const match = /^\[([^\]]+)\]\s*(.*)$/.exec(field.name);
+			const group = match?.[1] ?? "通用";
+			if (!groups.has(group)) {
+				const section = node("section", "form-group");
+				const rows = node("div", "form-group__row");
+				section.append(node("h2", "form-group__title", group), rows);
+				groups.set(group, rows);
+				view.append(section);
+			}
+			const row = node("div", "form-row pp-field");
+			const label = node("div", "form-row__text");
+			label.append(node("span", "form-row__title", match?.[2] ?? field.name));
+			if (field.description) label.append(node("span", "form-row__subtitle", field.description));
+			row.append(label);
 			const value = values[field.key];
 			/** @type {() => unknown} 读取尚未保存的输入 / Read the unsaved input. */
 			let read;
 			/** @type {(value: unknown) => void} 更新当前控件 / Update the current control. */
 			let write;
+			let inputContainer = row;
+			let eventName = "change";
 			switch (true) {
 				case Boolean(field.options) && field.type !== "array": {
 					const select = node("select", "pp-input");
@@ -600,12 +643,42 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 					break;
 				}
 				case field.type === "array" && Boolean(field.options): {
+					const page = node("section", "pp-choice-page");
+					if (field.description) page.append(node("p", "pp-description", field.description));
+					const choices = node("div", "form-group__row");
+					page.append(choices);
+					inputContainer = choices;
+					editors.set(field.key, { node: page, title: match?.[2] ?? field.name });
+					const summary = node("span", "form-row__value pp-summary");
+					const link = node("button", "pp-choice-link");
+					link.type = "button";
+					link.setAttribute("aria-label", field.name);
+					link.append(summary, node("span", "pp-chevron", "›"));
+					row.append(link);
+					const refresh = () => {
+						const value = client.snapshot(active).values[field.key];
+						summary.textContent =
+							field.options
+								.filter(option => Array.isArray(value) && value.includes(option.key))
+								.map(option => option.label)
+								.join("、") || "未选择";
+					};
+					summaries.push(refresh);
+					refresh();
+					link.onclick = () => {
+						window.history.pushState({ ...window.history.state, preferencePane: active }, "", `#${encodeURIComponent(field.key)}`);
+						showEditor();
+					};
+					row.addEventListener("click", event => {
+						if (!link.contains(event.target)) link.click();
+					});
 					const inputs = field.options.map(option => {
-						const label = node("label", "pp-choice", option.label);
+						const label = node("label", "form-row pp-choice", option.label);
 						const input = node("input", "");
 						input.type = "checkbox";
-						label.prepend(input);
-						row.append(label);
+						input.setAttribute("aria-label", option.label);
+						label.append(input);
+						choices.append(label);
 						return { input, key: option.key };
 					});
 					read = () => inputs.filter(option => option.input.checked).map(option => option.key);
@@ -617,6 +690,7 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 				default: {
 					const multiline = field.control === "textarea" || field.type === "array";
 					const input = node(multiline ? "textarea" : "input", "pp-input");
+					if (multiline) row.classList.add("pp-multiline");
 					input.setAttribute("aria-label", field.name);
 					if (field.placeholder) input.placeholder = field.placeholder;
 					if (multiline && field.rows) input.rows = field.rows;
@@ -639,11 +713,14 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 					}
 					if (field.type === "boolean") {
 						input.type = "checkbox";
+						input.classList.add("pp-switch");
+						input.setAttribute("role", "switch");
 						write = value => {
 							input.checked = value === true;
 						};
 						read = () => input.checked;
 					} else {
+						eventName = "input";
 						if (!multiline) input.type = field.type === "number" ? "number" : "text";
 						write = value => {
 							input.value = field.type === "array" ? JSON.stringify(value ?? []) : (value ?? "");
@@ -665,34 +742,31 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 				}
 			}
 			write(value);
-			const actions = node("div", "pp-actions");
-			for (const [operation, label] of [
-				["write", "保存"],
-				["delete", "删除覆盖值"],
-			]) {
-				const button = node("button", "", label);
-				button.type = "button";
-				button.onclick = () =>
-					perform(
-						async () => {
-							if (operation === "delete") await client.remove(active, field.key);
-							else {
-								let value;
-								try {
-									value = read();
-								} catch (error) {
-									notify({ kind: "error", message: error.message });
-									throw error;
-								}
-								await client.set(active, field.key, value);
-							}
-						},
-						() => write(client.snapshot(active).values[field.key]),
-					);
-				actions.append(button);
-			}
-			row.append(actions);
-			view.append(row);
+			let inputVersion = 0;
+			inputContainer.addEventListener(eventName, event => {
+				if (event.isComposing) return;
+				const version = ++inputVersion,
+					module = active;
+				let value;
+				try {
+					value = read();
+				} catch (error) {
+					notify({ kind: "error", message: error.message });
+					return;
+				}
+				const restore = () => {
+					if (version === inputVersion) write(client.snapshot(module).values[field.key]);
+				};
+				perform(
+					() => client.set(module, field.key, value),
+					() => {
+						for (const refresh of summaries) refresh();
+					},
+					restore,
+				);
+			});
+			if (eventName === "input") inputContainer.addEventListener("compositionend", event => event.target.dispatchEvent(new window.Event("input", { bubbles: true })));
+			groups.get(group).append(row);
 		}
 		const maintenance = node("section", "pp-maintenance");
 		maintenance.append(node("h2", "pp-title", "模块数据"));
@@ -705,6 +779,7 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 		output.setAttribute("aria-label", "Caches 内容");
 		for (const button of [cacheView, cacheClear, reset]) button.type = "button";
 		cacheView.onclick = () => {
+			if (saving) return;
 			let value;
 			return perform(
 				async () => {
@@ -723,6 +798,7 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 			);
 		};
 		cacheClear.onclick = () => {
+			if (saving) return;
 			if (!window.confirm(`清空 ${active} 的全部 Caches？`)) return;
 			return perform(
 				() => client.clearCaches(active),
@@ -732,6 +808,7 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 			);
 		};
 		reset.onclick = () => {
+			if (saving) return;
 			if (!window.confirm(`重置 ${active}？这将删除该模块的 Settings、Caches 和其它持久化数据。`)) return;
 			return perform(() => client.reset(active), controls);
 		};
@@ -740,6 +817,7 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 		view.append(maintenance);
 		viewport.replaceChildren(view);
 		for (const grow of growingInputs) grow();
+		showEditor();
 	}
 	/**
 	 * 按页面 pathname 切换模块，写入尚未完成时延后导航。
@@ -752,6 +830,7 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 			return;
 		}
 		pendingRoute = false;
+		secondaryRoute = undefined;
 		if (active) client.leave(active);
 		routedPath = window.location.pathname;
 		const match = /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.exec(routedPath);
@@ -771,7 +850,9 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 	 */
 	const onPopState = () => {
 		if (window.location.pathname !== routedPath) route();
+		else secondaryRoute?.();
 	};
+	const onHashChange = () => secondaryRoute?.();
 	/**
 	 * 从浏览器往返缓存恢复时重新读取当前模块。
 	 * Reload the current module when restored from the browser back-forward cache.
@@ -782,10 +863,15 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 		if (event.persisted) route();
 	};
 	back.onclick = () => {
-		if (!saving) window.history.back();
+		if (saving) return;
+		if (window.location.hash && window.history.state?.preferencePane !== active) {
+			window.history.replaceState(window.history.state, "", window.location.pathname);
+			secondaryRoute?.();
+		} else window.history.back();
 	};
 	window.addEventListener("popstate", onPopState);
 	window.addEventListener("pageshow", onPageShow);
+	window.addEventListener("hashchange", onHashChange);
 	route();
 	return {
 		/**
@@ -797,8 +883,9 @@ function mountPreferencePanes({ element: root, fetch, title = "Preferences" }) {
 			destroyed = true;
 			window.removeEventListener("popstate", onPopState);
 			window.removeEventListener("pageshow", onPageShow);
+			window.removeEventListener("hashchange", onHashChange);
 			generation++;
-			if (active) client.leave(active);
+			if (active && !saving) client.leave(active);
 			clearTimeout(timer);
 			shell.remove();
 		},
