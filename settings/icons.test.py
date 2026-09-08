@@ -8,9 +8,10 @@ root = Path(__file__).resolve().parents[2]
 for record in json.loads((root / "Biliverse.github.io/settings/icons-manifest.json").read_text()):
     source = root / record["source"]
     assert hashlib.sha256(source.read_bytes()).hexdigest() == record["sha256"]
-    prefix = "logo" if record["name"] == "Biliverse" else "icon"
-    light = Image.open(source.parent / f"{prefix}_settings_light.png").convert("RGBA")
-    dark = Image.open(source.parent / f"{prefix}_settings_dark.png").convert("RGBA")
+    prefix = record["name"] if record["name"] == "Enhanced" else "logo" if record["name"] == "Biliverse" else "icon"
+    directory = root / "Biliverse.github.io/settings/icons" if record["name"] == "Enhanced" else source.parent
+    light = Image.open(directory / f"{prefix}_settings_light.png").convert("RGBA")
+    dark = Image.open(directory / f"{prefix}_settings_dark.png").convert("RGBA")
     assert light.size == dark.size == (256, 256)
     assert light.getchannel("A").tobytes() == dark.getchannel("A").tobytes()
     x0, y0, x1, y1 = light.getchannel("A").getbbox()

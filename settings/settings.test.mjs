@@ -3,6 +3,7 @@ import test from "node:test";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { readFile, readdir } from "node:fs/promises";
+import vm from "node:vm";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const store = new Map();
@@ -10,8 +11,27 @@ let writable = true;
 globalThis.$environment = { "surge-version": "settings-test" };
 globalThis.$persistentStore = { read: key => store.get(key) ?? null, write: (value, key) => { if (!writable) return false; store.set(key, value); return true; } };
 globalThis.$argument = {};
-// Enhanced is covered by Enhanced/tests/preferences.test.mjs after its migration.
+// Migrated modules execute the site-hosted script; legacy modules still use their business entry.
 const names = ["Global", "Redirect", "ADBlock"];
+test("site-hosted Enhanced script works without Enhanced code or arguments", async () => {
+  const script = await readFile(new URL("../docs/public/settings/assets/Enhanced.request.js", import.meta.url), "utf8");
+  const data = new Map([["BiliBili", JSON.stringify({ Global: { sentinel: true } })]]);
+  let downloads = 0;
+  const run = (method, pathname, value) => new Promise(resolve => vm.runInNewContext(script, {
+    $environment: { "surge-version": "test" }, $script: { startTime: Date.now() / 1000 },
+    $persistentStore: { read: key => data.get(key), write: (value, key) => { data.set(key, value); return true; } },
+    $httpClient: { get: (_request, done) => { downloads++; done(null, { status: 200, headers: {} }, "[]"); } },
+    $request: { url: `https://biliverse.github.io${pathname}`, method, headers: { "X-Settings-Client": "1", "Content-Type": "application/json" }, body: JSON.stringify(value) },
+    $done: result => resolve(result.response), console: { log() {}, error() {} }, setTimeout, clearTimeout,
+  }));
+  assert.equal((await run("HEAD", "/configs/Enhanced")).status, 200);
+  assert.equal(downloads, 1);
+  assert.equal((await run("POST", "/api/Enhanced/Settings/Home/Top_left", "mine")).status, 200);
+  assert.equal(JSON.parse((await run("GET", "/api/Enhanced/Settings/Home/Top_left")).body), "mine");
+  assert.equal((await run("DELETE", "/api/Enhanced/")).status, 200);
+  assert.deepEqual(JSON.parse(data.get("BiliBili")), { Global: { sentinel: true } });
+  assert.equal(downloads, 1, "API operations never download configuration");
+});
 const requests = {};
 for (const name of names) requests[name] = (await import(pathToFileURL(path.join(root, name, "src/process/Request.mjs")))).Request;
 function request(name, method = "GET", values, headers = {}) {

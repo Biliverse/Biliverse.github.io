@@ -8,6 +8,7 @@ const names = ["Enhanced", "Global", "Redirect", "ADBlock"];
 const source = path.join(root, "settings");
 const check = process.argv.includes("--check");
 const read = name => readFile(path.join(source, name), "utf8");
+const site = JSON.parse(await read("site.boxjs.json"));
 const modules = [];
 const schemas = {};
 const outputs = new Map();
@@ -28,11 +29,13 @@ for (const name of names) {
     ...(options ? { options: options.map(({ key, label }) => ({ key: type === "number" ? Number(key) : key, label })) } : {}),
   }));
   if (name !== "Enhanced" && !schemas[name].some(field => field.key === "Storage")) schemas[name].push({ key: "Storage", name: "[储存] 配置类型", type: "string", defaultValue: "Argument", description: "选择模块参数、持久化设置或默认配置。", options: [{ key: "Argument", label: "模块参数" }, { key: "PersistentStore", label: "本地设置" }, { key: "database", label: "默认配置" }] });
-  const pkg = JSON.parse(await readFile(path.join(repo, "package.json"), "utf8"));
-  const icon = await themedIcon(path.join(repo, "src/assets"), "icon");
+  const description = name === "Enhanced" ? site.apps.find(app => app.module === name).desc : JSON.parse(await readFile(path.join(repo, "package.json"), "utf8")).description.split("\n").at(-1);
+  const iconDirectory = name === "Enhanced" ? path.join(source, "icons") : path.join(repo, "src/assets");
+  const iconPrefix = name === "Enhanced" ? name : "icon";
+  const icon = await themedIcon(iconDirectory, iconPrefix);
   for (const mode of ["light", "dark"])
-    outputs.set(path.join(root, `docs/public/settings/assets/${name}_${mode}.png`), await readFile(path.join(repo, `src/assets/icon_settings_${mode}.png`)));
-  modules.push({ name, description: pkg.description.split("\n").at(-1), icon });
+    outputs.set(path.join(root, `docs/public/settings/assets/${name}_${mode}.png`), await readFile(path.join(iconDirectory, `${iconPrefix}_settings_${mode}.png`)));
+  modules.push({ name, description, icon });
 }
 const logo = await themedIcon(source, "logo");
 const js = (await read("app.js")).replace("/* MODULES */", JSON.stringify(modules)).replace("/* LOGO */", JSON.stringify(logo));
@@ -53,7 +56,10 @@ for (const name of names) {
 }
 for (const name of ["index.html", "app.mjs", "panel.css", "home.css"])
   outputs.set(path.join(root, "docs/public/settings/assets", name), await readFile(fileURLToPath(import.meta.resolve(`@nsnanocat/preference-panes/dist/settings/${name}`))));
-outputs.set(path.join(root, "docs/public/settings/assets/site.boxjs.json"), await readFile(path.join(repositories, "Enhanced/settings/site.boxjs.json")));
+outputs.set(path.join(root, "docs/public/settings/assets/site.boxjs.json"), await readFile(path.join(source, "site.boxjs.json")));
+const proxyRuntime = await readFile(fileURLToPath(import.meta.resolve("@nsnanocat/preference-panes/dist/preference-panes.proxy.js")), "utf8");
+for (const installation of JSON.parse(await read("proxies.json")))
+  outputs.set(path.join(root, `docs/public/settings/assets/${installation.module}.request.js`), `${proxyRuntime}\nPreferencePanes.runPreferences(${JSON.stringify(installation)});\n`);
 outputs.set(path.join(root, "docs/public/settings/assets/Enhanced.boxjs.json"), await readFile(path.join(repositories, "Enhanced/template/boxjs.settings.json")));
 const enhancedPage = outputs.get(path.join(root, "docs/public/settings/assets/index.html"));
 outputs.set(path.join(root, "docs/public/settings/index.html"), enhancedPage);

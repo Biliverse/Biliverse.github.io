@@ -23,9 +23,11 @@ for name, source in sources.items():
     channels = [channel.point(lambda value: round(value + (255 - value) * 0.12))
                 for channel in light.split()[:3]]
     dark = Image.merge("RGBA", (*channels, light.getchannel("A")))
-    prefix = "logo" if name == "Biliverse" else "icon"
+    prefix = name if name == "Enhanced" else "logo" if name == "Biliverse" else "icon"
+    destination = root / "settings/icons" if name == "Enhanced" else source.parent
+    destination.mkdir(parents=True, exist_ok=True)
     for mode, output in (("light", light), ("dark", dark)):
-        output.save(source.parent / f"{prefix}_settings_{mode}.png", optimize=True)
+        output.save(destination / f"{prefix}_settings_{mode}.png", optimize=True)
     assert source.read_bytes() == original
     records.append({"name": name, "source": str(source.relative_to(root.parent)),
                     "sha256": hashlib.sha256(original).hexdigest(), "alphaBounds": bounds,
