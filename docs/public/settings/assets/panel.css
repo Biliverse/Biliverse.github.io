@@ -21,6 +21,27 @@
 .pp-title {
   font-size: 18px;
   margin: 0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.pp-module-info {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.pp-module-icon {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  object-fit: contain;
+}
+.pp-module-details {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pp-module-source {
+  color: inherit;
+  text-decoration: underline;
 }
 .pp-viewport {
   max-height: 80vh;
@@ -52,6 +73,8 @@
   font-size: 13px;
   opacity: 0.7;
   margin: 0 0 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .pp-input:not([type="checkbox"]) {
   width: 100%;
