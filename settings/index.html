@@ -5,27 +5,34 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>Biliverse</title>
+    <link rel="stylesheet" href="https://s1.hdslb.com/bfs/seed/jinkela/short/b-style/theme.min.css">
     <link rel="stylesheet" href="https://s1.hdslb.com/bfs/static/2233-monorepo/customer-service-h5/static/css/index.545c1c91.css">
-    <link rel="stylesheet" href="https://biliverse.github.io/settings/home.css?v=0.9.3">
-    <link rel="stylesheet" href="https://biliverse.github.io/settings/theme.css?v=0.9.3">
+    <link rel="stylesheet" href="https://biliverse.github.io/settings/home.css?v=customer-layout-1">
+    <link rel="stylesheet" href="https://biliverse.github.io/settings/theme.css?v=customer-layout-1">
   </head>
   <body>
 
     <div id="pages">
-    <main class="biliverse-home">
+    <main class="biliverse-home customer-service">
+      <div class="customer-service-main">
       <picture class="brand-logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/Biliverse_subject_dark.png"><img src="/settings/assets/Biliverse_subject_light.png" alt=""></picture>
       <section class="self-panel is-zh">
         <h2 class="header">插件</h2>
-        <div class="container"><div class="scroll-view"><div class="scroll">
+        <div class="container"><div class="scroll-view multi-layout multi-single"><div class="scroll">
           <button class="self-item is-zh" data-module="Enhanced" data-page="/settings/Enhanced" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/Enhanced_subject_dark.png"><img src="/settings/assets/Enhanced_subject_light.png" alt=""></picture><span class="name">Enhanced</span><span class="module-status">检测中</span></button>
           <button class="self-item is-zh" data-module="Global" data-page="/settings/Global" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/Global_subject_dark.png"><img src="/settings/assets/Global_subject_light.png" alt=""></picture><span class="name">Global</span><span class="module-status">检测中</span></button>
           <button class="self-item is-zh" data-module="Redirect" data-page="/settings/Redirect" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/Redirect_subject_dark.png"><img src="/settings/assets/Redirect_subject_light.png" alt=""></picture><span class="name">Redirect</span><span class="module-status">检测中</span></button>
           <button class="self-item is-zh" data-module="ADBlock" data-page="/settings/ADBlock" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/ADBlock_subject_dark.png"><img src="/settings/assets/ADBlock_subject_light.png" alt=""></picture><span class="name">ADBlock</span><span class="module-status">检测中</span></button>
         </div></div></div>
       </section>
-      <p class="settings-note">设置保存在当前代理工具中。使用本地设置前，请将配置类型设为 PersistentStore。</p>
-      <footer class="settings-build" id="build-info">本地预览（未构建）</footer>
-      <p class="settings-build"><button id="export-capabilities" type="button" hidden>复制客户端能力</button><span id="export-status" role="status"></span></p>
+      </div>
+      <footer class="footer-hint is-overseas">
+        <div class="hint-content">
+          <p class="customer-time">设置保存在当前代理工具中。使用本地设置前，请将配置类型设为 PersistentStore。</p>
+          <p class="customer-mail" id="build-info">本地预览（未构建）</p>
+          <p class="customer-mail"><button id="export-capabilities" type="button" hidden>复制客户端能力</button><span id="export-status" role="status"></span></p>
+        </div>
+      </footer>
     </main>
     </div>
     <p id="navigation-error" class="navigation-error" role="alert" hidden></p>
@@ -33,6 +40,6 @@
       <div class="module-message"><button type="button">返回</button><p role="status"></p></div>
     </section></template>
     <script src="https://s1.hdslb.com/bfs/seed/jinkela/short/jsb/js-bridge.min.js" defer></script>
-    <script type="module" src="/settings/home.js?v=direct-css-1"></script>
+    <script type="module" src="/settings/home.js?v=customer-layout-1"></script>
   </body>
 </html>

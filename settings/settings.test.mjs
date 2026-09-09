@@ -224,8 +224,7 @@ test("website deploys only generic frontend assets and owns the custom landing p
   assert.ok(!assets.includes("app.mjs") && !assets.includes("Enhanced.html"));
   assert.deepEqual(await readFile(new URL("../docs/public/settings/index.html", import.meta.url)), Buffer.from(html));
   for (const file of ["official", "official-styles.zip"]) await assert.rejects(access(new URL(`../docs/public/settings/${file}`, import.meta.url)), { code: "ENOENT" });
-  const theme = await readFile(new URL("theme.css", import.meta.url), "utf8");
-  assert.match(theme, /https:\/\/hilo\.bilibili\.com\/h5_common\/theme\.min\.css/);
+  assert.ok(html.includes("https://s1.hdslb.com/bfs/seed/jinkela/short/b-style/theme.min.css"));
   const mock = await readFile(new URL("../docs/public/settings/mock.js", import.meta.url), "utf8");
   assert.doesNotMatch(mock, /@bilibili\/b-style|--Ga0:|official-styles\.zip|settings\/official\//);
 });
