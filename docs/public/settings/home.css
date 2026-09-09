@@ -12,6 +12,9 @@ body {
 	margin: auto;
 	padding: calc(84px + env(safe-area-inset-top)) 16px 32px;
 }
+#app-navbar {
+	z-index: 3;
+}
 .brand-logo {
 	display: block;
 	width: 64px;
@@ -208,6 +211,7 @@ body {
 #module-host {
 	position: fixed;
 	inset: 0;
+	top: calc(52px + env(safe-area-inset-top));
 	background: inherit;
 	z-index: 1;
 	box-shadow: -8px 0 24px #00000014;

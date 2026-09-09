@@ -1,4 +1,4 @@
-import { Navigation } from "/settings/assets/navigation.mjs";
+import { Navigation, ModuleFrame } from "/settings/assets/navigation.mjs?v=0.7.2";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -9,10 +9,12 @@ if (theme) {
 }
 const buttons = [...document.querySelectorAll("button[data-module]")];
 const home = document.querySelector(".biliverse-home");
-const homeBack = home.querySelector(".home-navbar button");
-const navbar = home.querySelector(".home-navbar");
+const navbar = document.querySelector("#app-navbar");
+const homeBack = navbar.querySelector("button");
+const navbarTitle = navbar.querySelector("h1");
 const template = document.querySelector("#module-template");
 let generation = 0;
+let moduleFrame;
 const navigation = new Navigation(document.querySelector("#pages"), home, (module, signal) => {
   const button = buttons.find(button => button.dataset.module === module);
   if (!button) return;
@@ -21,38 +23,24 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   const status = host.querySelector("[role=status]");
   host.querySelector("button").onclick = () => navigation.back();
   status.textContent = "正在打开设置…";
-  const controller = new AbortController();
-  const abort = () => controller.abort();
-  signal.addEventListener("abort", abort, { once: true });
-  const timer = setTimeout(abort, 10000);
-  (async () => {
-    try {
-      const response = await fetch(button.dataset.page, {
-        cache: "no-store", credentials: "omit", signal: controller.signal,
-        headers: {
-          "X-PreferencePanes-JSON": `/configs/${module}`,
-          "X-PreferencePanes-CSS": "/settings/theme.css",
-        },
-      });
-      if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
-      const html = await response.text();
-      if (signal.aborted) return;
-      const frame = document.createElement("iframe");
-      frame.title = `${module} 设置`;
-      frame.srcdoc = html;
-      frame.onload = () => { message.hidden = true; };
-      host.append(frame);
-    } catch (error) {
-      if (signal.aborted) return;
-      status.textContent = controller.signal.aborted ? "加载超时，请返回后重试" : `无法打开设置：${error.message}`;
-    } finally {
-      clearTimeout(timer);
-      signal.removeEventListener("abort", abort);
-    }
-  })();
+  const frame = new ModuleFrame(button.dataset.page, { signal, headers: {
+    "X-PreferencePanes-JSON": `/configs/${module}`,
+    "X-PreferencePanes-CSS": "/settings/theme.css",
+  } });
+  moduleFrame = frame;
+  frame.addEventListener("change", () => {
+    navbarTitle.textContent = frame.state.title;
+    homeBack.disabled = !frame.state.canGoBack;
+  });
+  frame.element.onload = () => { message.hidden = true; };
+  host.append(frame.element);
+  frame.load().catch(error => {
+    if (!signal.aborted) status.textContent = `无法打开设置：${error.message}`;
+  });
   return host;
 });
-homeBack.onclick = () => navigation.back();
+navigation.addEventListener("change", () => { navbarTitle.textContent = navigation.current || "Biliverse"; });
+homeBack.onclick = () => navigation.current ? moduleFrame.back() : navigation.back();
 // 挂载后观察大图标，滚出导航栏下方的可见区域时切换到栏中央小图标。
 // Observe the mounted hero icon and show its centered compact variant once it scrolls past the bar.
 const brandObserver = new IntersectionObserver(([entry]) => navbar.toggleAttribute("data-compact", !entry.isIntersecting), {
@@ -67,6 +55,7 @@ for (const button of buttons) button.onclick = () => navigation.open(button.data
  * @returns {void} 探测已发起 / Probes started.
  */
 function probe() {
+  navbarTitle.textContent = navigation.current || "Biliverse";
   homeBack.disabled = !navigation.canGoBack;
   if (navigation.current) return;
   const current = ++generation;

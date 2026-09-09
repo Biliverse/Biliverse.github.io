@@ -7,19 +7,25 @@ import vm from "node:vm";
 // Preview the real deployment artifacts with isolated storage, without importing Enhanced business code.
 const publicDir = path.resolve(import.meta.dirname, "../docs/public");
 const store = new Map();
-const scripts = {
-  api: await readFile(path.join(publicDir, "settings/assets/Enhanced.request.js"), "utf8"),
-  configs: await readFile(path.join(publicDir, "settings/assets/Enhanced.config.js"), "utf8"),
-};
 const server = http.createServer(async (request, reply) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
     if (url.pathname === "/") { reply.writeHead(302, { Location: "/settings/" }); reply.end(); return; }
-    const group = /^\/settings\/Enhanced\/?$/.test(url.pathname) ? "api" : /^\/(api|configs)\/Enhanced(?:\/|$)/.exec(url.pathname)?.[1];
-    if (group) {
+    const route = /^\/(settings|configs|api)\/([a-zA-Z0-9_-]+)(?:\/(.*))?$/.exec(url.pathname);
+    if (route && (route[1] !== "settings" || !route[3])) {
+      const [, group, module] = route;
       let body = "";
       for await (const chunk of request) body += chunk;
-      const result = await new Promise(resolve => vm.runInNewContext(scripts[group], {
+      // 构建后立即使用同批次的页面与前端资源，避免进程缓存旧版本脚本。
+      // Read current build artifacts so the server cannot retain an older page runtime.
+      let script;
+      try {
+        script = await readFile(path.join(publicDir, `settings/assets/${module}.${group === "configs" ? "config" : "request"}.js`), "utf8");
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+        reply.writeHead(404); reply.end(); return;
+      }
+      const result = await new Promise(resolve => vm.runInNewContext(script, {
         $environment: { "surge-version": "preview" }, $script: { startTime: Date.now() / 1000 },
         $persistentStore: { read: key => store.get(key), write: (value, key) => { store.set(key, value); return true; } },
         $request: { url: url.href, method: request.method, headers: request.headers, body },
