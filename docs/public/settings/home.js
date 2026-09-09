@@ -1,4 +1,4 @@
-import { Navigation, ModuleFrame, ModuleStatus } from "/settings/assets/navigation.mjs?v=0.8.0";
+import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.8.0";
 import { inBilibili, closeBilibili } from "./bilibili.mjs";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
@@ -23,6 +23,9 @@ const statuses = buttons.map(button => {
   return { button, status };
 });
 let moduleFrame;
+const actionMenu = new ActionMenu(id => moduleFrame.perform(id));
+navbar.querySelector(".home-nav-spacer").append(actionMenu.element);
+actionMenu.element.hidden = true;
 const navigation = new Navigation(document.querySelector("#pages"), home, (module, signal) => {
   const button = buttons.find(button => button.dataset.module === module);
   if (!button) return;
@@ -74,6 +77,9 @@ function updateNavbar() {
   navbarDark.srcset = button ? button.querySelector("source").getAttribute("srcset") : homeIcon.dark;
   navbarImage.alt = module ? "" : "Biliverse";
   homeBack.disabled = module ? !moduleFrame.state.canGoBack : !navigation.canGoBack && !inBilibili();
+  const actions = module ? moduleFrame.state.actions : [];
+  actionMenu.element.hidden = actions.length === 0;
+  actionMenu.update(actions, Boolean(module && moduleFrame.state.busy));
 }
 
 /**

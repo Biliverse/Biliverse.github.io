@@ -3,6 +3,8 @@
 :root {
   --biliverse-accent: #fb7299;
 }
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
 .pp-panel {
   --pp-accent: var(--biliverse-accent);
 }
