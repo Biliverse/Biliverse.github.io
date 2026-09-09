@@ -1,7 +1,9 @@
+@import url("https://biliverse.github.io/settings/official/theme.min.css?v=4.0.1");
+
 /* 首页与模块页共用 Biliverse 品牌色，模块页通过 CSS 输入加载。
  * Share the Biliverse accent between the landing page and CSS-imported module pages. */
 :root {
-  --biliverse-accent: #fb7299;
+  --biliverse-accent: var(--brand_pink, #ff6699);
 }
 :root[data-theme="dark"] { color-scheme: dark; }
 :root[data-theme="light"] { color-scheme: light; }

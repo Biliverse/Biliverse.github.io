@@ -6,7 +6,56 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import vm from "node:vm";
-import { inBilibili, closeBilibili } from "./bilibili.mjs";
+import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, exportCapabilities } from "./bilibili.mjs";
+
+test("capability export contains method lists without user or storage data", async () => {
+  let copied;
+  const host = { biliBridge: {
+    jsbVersion: "3.3.5", initPromise: Promise.resolve(), isSupport: async () => true, isBiliInjectV2: () => true,
+    useNative: async () => ({ data: { methods: ["ui.setNavigationButton"] } }),
+    callNative: options => {
+      if (options.method === "global.getAllSupport") options.callback(["global.closeBrowser"]);
+      else { copied = JSON.parse(options.data.content); options.callback({ code: 0 }); }
+    },
+  } };
+  await exportCapabilities(host);
+  assert.deepEqual(copied, { sdk: "3.3.5", v1: ["global.closeBrowser"], v2: { methods: ["ui.setNavigationButton"] } });
+});
+
+test("native confirmations use validated button fields and wait for a user decision", async () => {
+  let call;
+  const host = { biliBridge: { initPromise: Promise.resolve(), isSupport: async () => true, callNative: value => { call = value; } } };
+  const pending = confirmBilibili("Clear?", host);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(call.data, { type: "confirm", title: "Biliverse", message: "Clear?", confirmButton: "确定", cancelButton: "取消" });
+  call.callback("ok");
+  call.onCancel();
+  assert.equal(await pending, false);
+  const confirmed = confirmBilibili("Reset?", host);
+  await new Promise(resolve => setImmediate(resolve));
+  call.onConfirm();
+  assert.equal(await confirmed, true);
+});
+
+test("official appearance callbacks drive live theme and keyboard changes", async () => {
+  const subscriptions = new Map(), themes = [], heights = [];
+  const host = { navigator: { userAgent: "BiliApp" }, biliBridge: {
+    initPromise: Promise.resolve(), isSupport: async () => true,
+    callNative: options => subscriptions.set(options.method, options),
+  } };
+  await observeAppearance({ theme: value => themes.push(value), keyboard: height => heights.push(height) }, host);
+  const theme = subscriptions.get("ui.observeThemeChange");
+  assert.equal(theme.data.immediately, true);
+  theme.onChangeTheme({ theme: 2, night: 1 });
+  theme.onChangeTheme({ theme: 1, night: 0 });
+  assert.deepEqual(themes, [{ theme: 2, night: 1 }, { theme: 1, night: 0 }]);
+  const keyboard = subscriptions.get("ui.observeKeyboardStatus");
+  keyboard.onShow({ height: 320 });
+  keyboard.onChangeHeight({ height: 280 });
+  keyboard.onHide();
+  assert.deepEqual(heights, [320, 280, 0]);
+  await observeAppearance({ theme() { assert.fail(); }, keyboard() { assert.fail(); } }, { navigator: { userAgent: "Mozilla" } });
+});
 
 test("website mocks return same-build resources without requests or storage access", async () => {
   const source = await readFile(new URL("../docs/public/settings/mock.js", import.meta.url), "utf8");
