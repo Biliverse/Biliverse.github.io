@@ -1,139 +1,62 @@
-/* Biliverse 定制首页，基于官方客服组件 CSS 的本地适配。
- * Biliverse landing-page adaptations layered over official customer-service component CSS. */
-body {
-	margin: 0;
-	overflow-x: hidden;
-	font-family: system-ui, sans-serif;
-	background: #f6f7f8;
-	color: #18191c;
+/* 列表与页脚直接使用客服中心官方 CSS；这里只保留宿主容器和项目扩展。
+ * Lists and footer use official customer-service CSS; only host layout and project additions live here. */
+html {
+	/* 官方页面以视口宽度 / 3 设置 rem；使用 CSS 保持相同基准。
+	 * The official page sets rem to viewport width / 3; CSS preserves that sizing. */
+	font-size: calc(100vw / 3);
 }
-.biliverse-home {
-	max-width: 720px;
-	margin: auto;
-	padding: 24px 16px 32px;
+body {
+	font-size: 16px;
+	overflow-x: hidden;
 }
 .brand-logo {
 	display: block;
 	width: 64px;
 	height: 64px;
-	margin: 0 auto 32px;
+	margin: 24px auto;
 }
-.brand-logo img {
-	display: block;
+.brand-logo img,
+.self-item .logo img {
 	width: 100%;
 	height: 100%;
 	object-fit: contain;
 }
-.self-panel {
-	padding: 12px;
-	background: #fff;
-	border-radius: 12px;
+/* 官方图标把圆底绘入图片；项目透明图标在容器中补充圆底。
+ * Official images include their circular backgrounds; project transparent logos get a circular container. */
+.self-item .logo {
+	border-radius: 50%;
+	padding: .064rem;
+	background: var(--Pi0);
 }
-.self-panel .header {
-	font-size: 16px;
-	margin: 0;
-	padding: 0 6px;
-}
-.self-panel .container {
-	margin-top: 16px;
-}
-.self-panel .self-item {
-	width: 25%;
-	min-width: 0;
-	border: 0;
-	background: none;
-	padding: 12px 2px;
-	color: inherit;
+button.self-item {
+	background: transparent;
 	cursor: pointer;
 }
-.self-panel .self-item .logo {
-	display: block;
-	width: 56px;
-	height: 56px;
-	padding: 10px;
-	box-sizing: border-box;
-	border-radius: 50%;
-	background: #f1f2f3;
-}
-.self-panel .logo img {
-	display: block;
-	width: 100%;
-	height: 100%;
-	object-fit: contain;
-}
-.self-panel .self-item.is-zh .name {
-	font-size: 13px;
-	line-height: 20px;
-	margin-top: 8px;
-	white-space: normal;
+/* 版本状态比官方条目多一行，条目随内容增高，宽度和间距仍由官方样式决定。
+ * Version status adds a row; content controls height while official CSS owns width and spacing. */
+.self-panel.is-zh .scroll-view .scroll .self-item[data-module] {
+	height: auto;
 }
 .module-status {
-	font-size: 11px;
-	line-height: 16px;
-	min-height: 16px;
+	font-size: .088rem;
+	line-height: .12rem;
+	min-height: .12rem;
 	max-width: 100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	color: #9499a0;
+	color: var(--text3);
 }
 .self-item:disabled {
-	opacity: 0.45;
+	opacity: .45;
 	cursor: default;
 }
-.settings-note {
-	font-size: 13px;
-	line-height: 1.6;
-	color: #797f89;
-	padding: 16px 0;
+.footer-hint .hint-content .customer-mail {
+	margin-top: .064rem;
 }
-.settings-build {
-	font-size: 12px;
-	line-height: 1.6;
-	text-align: center;
-	color: #797f89;
-	padding-bottom: env(safe-area-inset-bottom);
-}
-@media (prefers-color-scheme: dark) {
-	body {
-		background: #101114;
-		color: #e3e5e7;
-	}
-	.self-panel {
-		background: #1c1d20;
-	}
-	.self-panel .self-item .logo {
-		background: #303136;
-	}
-}
-:root[data-theme="dark"] body {
-	background: #101114;
-	color: #e3e5e7;
-}
-:root[data-theme="dark"] .self-panel {
-	background: #1c1d20;
-}
-:root[data-theme="dark"] .self-panel .self-item .logo {
-	background: #303136;
-}
-:root[data-theme="light"] body {
-	background: #f6f7f8;
-	color: #18191c;
-}
-:root[data-theme="light"] .self-panel {
-	background: #fff;
-}
-:root[data-theme="light"] .self-panel .self-item .logo {
-	background: #f1f2f3;
-}
-
-.self-panel .scroll {
-	display: flex;
-}
-.self-panel .self-item {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
+.footer-hint button {
+	background: transparent;
+	color: inherit;
 }
 
 .module-message[hidden] {

@@ -23,6 +23,15 @@ exportButton.onclick = async () => {
   } catch (error) { status.textContent = error.message; }
   finally { exportButton.disabled = false; }
 };
+// 客服中心在 500px 切换布局，并由官方 ipad-class 固定平板 rem 基准。
+// Customer service switches layout at 500px; its official ipad-class fixes tablet rem sizing.
+const wideLayout = matchMedia("(min-width: 500px)");
+const updateLayout = () => {
+  document.documentElement.classList.toggle("ipad-class", wideLayout.matches);
+  document.querySelector(".self-panel .scroll-view").className = wideLayout.matches ? "scroll-view large-layout large-single" : "scroll-view multi-layout multi-single";
+};
+wideLayout.addEventListener("change", updateLayout);
+updateLayout();
 const buttons = [...document.querySelectorAll("button[data-module]")];
 const home = document.querySelector(".biliverse-home");
 const template = document.querySelector("#module-template");
@@ -44,7 +53,7 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   status.textContent = "正在打开设置…";
   const frame = new ModuleFrame(button.dataset.page, { signal, headers: {
     "X-PreferencePanes-JSON": `/configs/${module}`,
-    "X-PreferencePanes-CSS": "https://biliverse.github.io/settings/theme.css?v=0.9.3",
+    "X-PreferencePanes-CSS": "https://biliverse.github.io/settings/theme.css?v=customer-layout-1",
   } });
   moduleFrame = frame;
   if (inBilibili()) frame.addEventListener("confirm", event => {

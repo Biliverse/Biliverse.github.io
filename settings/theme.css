@@ -1,5 +1,3 @@
-@import url("https://hilo.bilibili.com/h5_common/theme.min.css");
-
 /* 首页与模块页共用 Biliverse 品牌色，模块页通过 CSS 输入加载。
  * Share the Biliverse accent between the landing page and CSS-imported module pages. */
 :root {
@@ -34,8 +32,6 @@
 :root[data-theme="light"] .pp-panel[data-module="Global"] { --biliverse-module-logo: url("/settings/assets/Global_subject_light.png"); }
 :root[data-theme="light"] .pp-panel[data-module="Redirect"] { --biliverse-module-logo: url("/settings/assets/Redirect_subject_light.png"); }
 :root[data-theme="light"] .pp-panel[data-module="ADBlock"] { --biliverse-module-logo: url("/settings/assets/ADBlock_subject_light.png"); }
-.biliverse-home .header,
-.self-item:enabled .name,
 .module-message button,
 .pp-panel .pp-header,
 .pp-panel .pp-back {
