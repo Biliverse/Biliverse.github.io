@@ -1,0 +1,38 @@
+/* 首页与模块页共用 Biliverse 品牌色，模块页通过 CSS 输入加载。
+ * Share the Biliverse accent between the landing page and CSS-imported module pages. */
+:root {
+  --biliverse-accent: #fb7299;
+}
+.pp-panel {
+  --pp-accent: var(--biliverse-accent);
+}
+.pp-panel[data-module="Enhanced"] {
+  --biliverse-module-logo: url("/settings/assets/Enhanced_light.png");
+}
+/* 未提供 BoxJS icon 的字段数组由项目主题补充图标，通用包不绑定品牌。
+ * The project theme supplies an icon for field arrays without BoxJS icon metadata. */
+.pp-panel[data-module="Enhanced"] .pp-brand-icon:empty {
+  display: block;
+  background: var(--biliverse-module-logo) center / contain no-repeat;
+}
+@media (prefers-color-scheme: dark) {
+  .pp-panel[data-module="Enhanced"] { --biliverse-module-logo: url("/settings/assets/Enhanced_dark.png"); }
+}
+:root[data-theme="dark"] .pp-panel[data-module="Enhanced"] {
+  --biliverse-module-logo: url("/settings/assets/Enhanced_dark.png");
+}
+:root[data-theme="light"] .pp-panel[data-module="Enhanced"] {
+  --biliverse-module-logo: url("/settings/assets/Enhanced_light.png");
+}
+.home-navbar,
+.home-navbar button,
+.biliverse-home .header,
+.self-item:enabled .name,
+.module-message button,
+.pp-panel .pp-header,
+.pp-panel .pp-back {
+  color: var(--biliverse-accent);
+}
+.module-message button {
+  border-color: var(--biliverse-accent);
+}
