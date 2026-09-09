@@ -2,6 +2,20 @@
 
 主入口为 `https://biliverse.github.io/settings/`。Enhanced 插入 App 入口，并只输出设置字段的 BoxJS JSON。本站维护主菜单、设置图标、安装映射和部署；PreferencePanes 提供完整页面、导航、控件、通知及独立代理执行端。Enhanced 不导入该包、不构建或处理设置页面，也不通过自己的 Request 响应设置 API。
 
+## 安装
+
+先安装一次独立 PreferencePanes 通用模块，再更新 Enhanced 模块订阅。通用模块统一提供页面与存储 API，Enhanced 仅提供配置 Mock。替换旧版 Enhanced 订阅可移除其中旧的页面/API 规则。
+
+| 代理 | 通用模块 |
+| --- | --- |
+| Surge | [PreferencePanes.sgmodule](https://biliverse.github.io/settings/PreferencePanes.sgmodule) |
+| Loon | [PreferencePanes.plugin](https://biliverse.github.io/settings/PreferencePanes.plugin) |
+| Quantumult X | [PreferencePanes.snippet](https://biliverse.github.io/settings/PreferencePanes.snippet) |
+| Stash | [PreferencePanes.stoverride](https://biliverse.github.io/settings/PreferencePanes.stoverride) |
+| Shadowrocket | [PreferencePanes.conf](https://biliverse.github.io/settings/PreferencePanes.conf) |
+
+主菜单只并发 HEAD /configs/{module}，不探测 API。缺少配置 Mock 时入口禁用；直接打开模块地址也会先 GET 配置，缺失、无字段或无效 JSON 时不读取设置 API、不生成表单。通用模块不匹配 /configs/，不会替已关闭的业务插件返回 JSON。
+
 ## 当前职责
 
 | 来源 | 内容 |
@@ -9,16 +23,17 @@
 | @nsnanocat/preference-panes/dist/settings/ | index.html、app.mjs、panel.css、home.css |
 | settings/site.boxjs.json | 本站的品牌、四个模块入口、亮暗图标、官方 CSS 链接 |
 | Enhanced/template/boxjs.settings.json | full argument config 通过标准 arguments-builder 生成的 BoxJS |
-| settings/proxies.json | 本站维护的可信存储根、模块名与资源映射，构建时写入独立代理脚本 |
+| settings/proxies.json | 通用模块的可信存储根、允许访问的模块名单与页面资源映射，不含配置 Mock |
 | settings/icons/ | 本站维护的 Enhanced 设置图标，原始产品 logo 仍归业务项目 |
 | @nsnanocat/preference-panes/dist/preference-panes.proxy.js | 包提供的预构建代理运行时，包含宿主适配、资源请求和存储读写 |
-| Enhanced 的代理模板 | 安装本站独立脚本与原生 Mock，不调用 Enhanced 业务 Request |
+| settings/PreferencePanes.* | 独立通用模块安装文件，统一接管 /api/ 与 /settings/ |
+| Enhanced 的代理模板 | 仅安装 /configs/Enhanced 的 BoxJS Mock |
 
 HTML 不含模块名单、字段表或项目地址。根菜单从本站 site.boxjs.json 的 apps[].module 得到模块路径；设置控件在打开模块时根据配置 Mock 返回的 BoxJS 生成。设置构建从 Enhanced 读取的唯一文件是 template/boxjs.settings.json；不读取其 package.json、设置图标、安装配置、Request 或 dist。旧 settings/ 目录和 npm 接入依赖已从 Enhanced 删除。
 
-构建读取包内代理运行时，再附加 PreferencePanes.runPreferences(安装映射)，生成 assets/Enhanced.request.js。该文件由本站发布，所有执行逻辑来自包。插件只安装这个 URL，不需要支持 $argument；Surge 和 Quantumult X 均使用同一个文件。API 不下载配置或安装映射，安装脚本本身已经包含可信映射。
+构建读取包内代理运行时，再附加 PreferencePanes.runPreferences(安装映射)，生成 assets/PreferencePanes.request.js，由独立通用模块安装一次，处理所有允许的业务模块。API 不下载配置或安装映射。另生成 assets/Enhanced.config.js，仅为没有原生远程 Mock 的平台返回 BoxJS JSON，不包含任何存储、页面或网络下载逻辑。
 
-Global、Redirect、ADBlock 尚未迁移到新版包，其旧页面和读写脚本仍由现有生成器维护。新版主菜单仅对返回配置 Mock 的模块启用按钮；不会把旧接口可达误判为新版接入完成。
+Global、Redirect、ADBlock 尚未提供新版配置 Mock，因此入口禁用。所有模块静态地址和 HTML Mock 下载源都使用同一个通用外壳；直接访问缺少 JSON 的模块也不会回退到旧的固化表单。旧版读写脚本暂不迁移，旧 API 可达不能让新版入口变为可用。
 
 ## 路径与时序
 
@@ -38,7 +53,7 @@ API 只按安装映射读写任意 JSON 路径，使用 util 的 Storage/Lodash�
 
 ## Mock 与资源
 
-Surge/Loon 使用原生静态 Mock，Egern 沿用 Surge 转换。其它模板将配置和页面请求交给同一个独立代理脚本，按本站 proxies.json 的 source 下载文件。资源下载路径与拦截路径分离，避免循环匹配。存储 API 独立处理，不触发资源下载；Enhanced 的业务 argument 不传给设置脚本。
+Surge/Loon 在 Enhanced 中仅安装原生配置 Mock，其它平台仅安装 Enhanced.config.js 配置响应。页面与 API 规则全部位于独立 PreferencePanes 模块。页面下载源与拦截路径分离；通用模块不得拦截 /configs/。Enhanced 的业务 argument 不传给设置脚本。
 
 自定义请求全部使用 biliverse.github.io，需要代理对该域名启用 MITM，不占用哔哩哔哩官方 API。关闭插件后仍可打开线上主菜单，但 /configs/{module} 探测失败，对应按钮禁用。
 
@@ -62,7 +77,7 @@ node --test settings/settings.test.mjs
 node scripts/preview-settings.mjs
 ```
 
-生成器从包复制四个静态文件到 docs/public/settings/assets/，发布本站菜单、Enhanced BoxJS 和独立的 Enhanced.request.js，并更新主入口与 Enhanced 路径的 HTML。未迁移模块继续使用原有生成流程。不要手改生成文件。
+生成器从包复制四个静态文件到 docs/public/settings/assets/，发布菜单、Enhanced BoxJS、Enhanced.config.js、PreferencePanes.request.js 与五种独立安装文件，并更新主入口与 Enhanced 路径的 HTML。未迁移模块继续使用原有生成流程。不要手改生成文件。
 
 预览静态文件来自 Pages 输出；Enhanced API 直接执行已生成的独立脚本，不导入 Enhanced Request。其它未迁移模块仍使用旧 Request。所有预览均使用独立内存存储，不读取用户代理配置。PORT 可指定端口。浏览器预览不替代所有代理 App 的实机验证。
 
