@@ -1,9 +1,0 @@
-#!name = Biliverse PreferencePanes
-#!desc = Enhanced 模块设置页与持久化读写；项目首页独立托管。
-#!homepage = https://github.com/NSNanoCat/PreferencePanes
-
-#[rewrite_local]
-^https:\/\/biliverse\.github\.io\/(?:api\/Enhanced(?:\/[^?]*)?|settings\/Enhanced\/?)(?:\?.*)?$ url script-echo-response https://gist.githubusercontent.com/VirgilClyne/97d7611df1c0b29a254ce8f527137576/raw/settings.dev.bundle.js
-
-#[mitm]
-hostname = biliverse.github.io
