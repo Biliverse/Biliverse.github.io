@@ -84,7 +84,7 @@ test("website mocks return same-build resources without requests or storage acce
       else assert.equal(response.body, "");
     }
   }
-  for (const url of ["https://app.bilibili.com/x/v2/account/mine", "https://app.bilibili.com/settings/Enhanced", "https://app.bilibili.com/configs/Enhanced", "https://app.bilibili.com/api/get"]) {
+  for (const url of ["https://app.bilibili.com/x/v2/account/mine", "https://app.bilibili.com/settings/Enhanced", "https://app.bilibili.com/configs/Enhanced", "https://app.bilibili.com/api/get", "https://app.bilibili.com/settings/home.css", "https://app.bilibili.com/settings/theme.css"]) {
     const result = await new Promise(resolve => vm.runInNewContext(source, {
       $request: { url, method: "GET" }, $task: {}, $done: resolve, console: { log() {}, error() {} },
     }));
@@ -213,6 +213,8 @@ test("website deploys only generic frontend assets and owns the custom landing p
   const assets = await readdir(new URL("../docs/public/settings/assets/", import.meta.url));
   assert.equal((html.match(/data-module=/g) ?? []).length, 4);
   assert.match(html, /class="brand-logo"/);
+  for (const file of ["home.css", "theme.css"]) assert.ok(html.includes(`href="https://biliverse.github.io/settings/${file}?`));
+  assert.ok(script.includes('"X-PreferencePanes-CSS": "https://biliverse.github.io/settings/theme.css?'));
   assert.doesNotMatch(html + script, /app-navbar|homeBack|ActionMenu|IntersectionObserver|closeBilibili/);
   assert.doesNotMatch(script, /\/api\/|mount\(|srcdoc|DOMParser|\.replace\(|pushState|\.animate\(/);
   assert.match(script, /new ModuleStatus/);

@@ -48,7 +48,7 @@ const server = http.createServer(async (request, reply) => {
     try {
       const body = await readFile(target);
       const mime = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json", ".png": "image/png" }[path.extname(target)] ?? "text/plain";
-      const output = overrides && mime.startsWith("text/") ? overrides.rewrite(body.toString()) : body;
+      const output = overrides && mime.startsWith("text/") ? overrides.rewrite(body.toString()).replaceAll("https://biliverse.github.io/settings/home.css", "/settings/home.css").replaceAll("https://biliverse.github.io/settings/theme.css", "/settings/theme.css") : body;
       reply.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-store" }); reply.end(request.method === "HEAD" ? undefined : output);
     } catch (error) {
       if (!["ENOENT", "ENOTDIR"].includes(error.code)) throw error;

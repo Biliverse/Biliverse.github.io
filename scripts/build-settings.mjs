@@ -22,10 +22,10 @@ if (stamp) {
   const label = `构建于 <time datetime="${builtAt.toISOString()}">${builtAt.toLocaleString("sv-SE", { timeZone: "Asia/Shanghai" })} UTC+8</time> · ${revision}`;
   outputs.set("settings/index.html", outputs.get("settings/index.html").toString().replace("本地预览（未构建）", label));
 }
-// 不支持远程文件 Mock 的代理直接返回同次构建的静态资源，包含 PNG 原始字节。
-// Proxies without remote file mocks return same-build static resources, including original PNG bytes.
-const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png" };
-const assets = Object.fromEntries([...outputs].map(([name, body]) => [name === "settings/index.html" ? "/settings/" : `/${name}`, [types[path.extname(name)], name.endsWith(".png") ? [...body] : body.toString()]]));
+// 不支持远程文件 Mock 的代理返回同次构建的静态资源；CSS 从网站直连，不打包进 Mock。
+// Proxies without remote file mocks return same-build assets; CSS loads directly from the site, outside mocks.
+const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".png": "image/png" };
+const assets = Object.fromEntries([...outputs].filter(([name]) => !name.endsWith(".css")).map(([name, body]) => [name === "settings/index.html" ? "/settings/" : `/${name}`, [types[path.extname(name)], name.endsWith(".png") ? [...body] : body.toString()]]));
 const bundle = await rollup({ input: path.join(root, "settings/mock.mjs"), plugins: [nodeResolve(), {
   name: "website-assets",
   resolveId(id) { if (id === "#website-assets") return id; },

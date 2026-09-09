@@ -44,7 +44,7 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   status.textContent = "正在打开设置…";
   const frame = new ModuleFrame(button.dataset.page, { signal, headers: {
     "X-PreferencePanes-JSON": `/configs/${module}`,
-    "X-PreferencePanes-CSS": "/settings/theme.css?v=0.9.3",
+    "X-PreferencePanes-CSS": "https://biliverse.github.io/settings/theme.css?v=0.9.3",
   } });
   moduleFrame = frame;
   if (inBilibili()) frame.addEventListener("confirm", event => {
