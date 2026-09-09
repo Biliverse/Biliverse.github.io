@@ -9,8 +9,28 @@
       922,
       764
     ],
-    "squareSize": 822,
-    "outputSize": 256
+    "subjectBounds": [
+      100,
+      260,
+      922,
+      764
+    ],
+    "center": [
+      511.0,
+      512.0
+    ],
+    "crop": [
+      84,
+      85,
+      938,
+      939
+    ],
+    "squareSize": 854,
+    "outputSize": 256,
+    "outputs": [
+      "settings/icons/Biliverse_subject_light.png",
+      "settings/icons/Biliverse_subject_dark.png"
+    ]
   },
   {
     "name": "Enhanced",
@@ -22,8 +42,28 @@
       993,
       921
     ],
-    "squareSize": 862,
-    "outputSize": 256
+    "subjectBounds": [
+      131,
+      134,
+      893,
+      812
+    ],
+    "center": [
+      512.0,
+      473.0
+    ],
+    "crop": [
+      15,
+      -24,
+      1009,
+      970
+    ],
+    "squareSize": 994,
+    "outputSize": 256,
+    "outputs": [
+      "settings/icons/Enhanced_subject_light.png",
+      "settings/icons/Enhanced_subject_dark.png"
+    ]
   },
   {
     "name": "Global",
@@ -35,8 +75,28 @@
       993,
       921
     ],
-    "squareSize": 862,
-    "outputSize": 256
+    "subjectBounds": [
+      131,
+      134,
+      893,
+      812
+    ],
+    "center": [
+      512.0,
+      473.0
+    ],
+    "crop": [
+      15,
+      -24,
+      1009,
+      970
+    ],
+    "squareSize": 994,
+    "outputSize": 256,
+    "outputs": [
+      "settings/icons/Global_subject_light.png",
+      "settings/icons/Global_subject_dark.png"
+    ]
   },
   {
     "name": "Redirect",
@@ -48,8 +108,28 @@
       994,
       960
     ],
-    "squareSize": 863,
-    "outputSize": 256
+    "subjectBounds": [
+      131,
+      173,
+      893,
+      851
+    ],
+    "center": [
+      512.0,
+      512.0
+    ],
+    "crop": [
+      14,
+      14,
+      1010,
+      1010
+    ],
+    "squareSize": 996,
+    "outputSize": 256,
+    "outputs": [
+      "settings/icons/Redirect_subject_light.png",
+      "settings/icons/Redirect_subject_dark.png"
+    ]
   },
   {
     "name": "ADBlock",
@@ -61,7 +141,27 @@
       991,
       957
     ],
-    "squareSize": 860,
-    "outputSize": 256
+    "subjectBounds": [
+      131,
+      173,
+      991,
+      957
+    ],
+    "center": [
+      561.0,
+      565.0
+    ],
+    "crop": [
+      115,
+      119,
+      1007,
+      1011
+    ],
+    "squareSize": 892,
+    "outputSize": 256,
+    "outputs": [
+      "settings/icons/ADBlock_subject_light.png",
+      "settings/icons/ADBlock_subject_dark.png"
+    ]
   }
 ]

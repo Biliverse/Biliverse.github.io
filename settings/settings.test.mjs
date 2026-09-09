@@ -5,6 +5,21 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { inBilibili, closeBilibili } from "./bilibili.mjs";
+
+test("app exit uses the official close protocol and never fabricates browser history", async () => {
+  const calls = [];
+  const browser = { navigator: { userAgent: "Mozilla/5.0" } };
+  assert.equal(inBilibili(browser), false);
+  const app = { ...browser, biliBridge: { inBiliApp: true, useNative: async method => calls.push(method) } };
+  assert.equal(inBilibili(app), true);
+  await closeBilibili(app);
+  const native = { ...browser, webkit: { messageHandlers: { biliInjectV2: { postMessage: text => calls.push(JSON.parse(text)) } } } };
+  await closeBilibili(native);
+  assert.equal(calls[0], "global.closeBrowser");
+  assert.deepEqual(calls[1], { method: "global.closeBrowser", data: {}, callbackId: 0 });
+  await assert.rejects(closeBilibili(browser), /App/);
+});
 
 test("preview uses the common PreferencePanes API and module-owned config artifacts", { timeout: 15000 }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), "biliverse-preview-"));
@@ -59,7 +74,7 @@ test("website deploys only generic frontend assets and owns the custom landing p
   assert.equal((html.match(/data-module=/g) ?? []).length, 4);
   assert.ok(html.includes("<h1>Biliverse</h1>"));
   assert.doesNotMatch(script, /\/api\/|mount\(|srcdoc|DOMParser|\.replace\(|pushState|\.animate\(/);
-  assert.match(script, /method: "HEAD"/);
+  assert.match(script, /new ModuleStatus/);
   assert.match(script, /ModuleFrame/);
   assert.doesNotMatch(build, /boxjs|\.\.\/Enhanced|build\(boxjs/);
   assert.ok(assets.every(name => !/\.boxjs\.json$|\.(config|request)\.js$/.test(name)));

@@ -3,11 +3,13 @@
 :root {
   --biliverse-accent: #fb7299;
 }
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
 .pp-panel {
   --pp-accent: var(--biliverse-accent);
 }
 .pp-panel[data-module="Enhanced"] {
-  --biliverse-module-logo: url("/settings/assets/Enhanced_light.png");
+  --biliverse-module-logo: url("/settings/assets/Enhanced_subject_light.png");
 }
 /* 未提供 BoxJS icon 的字段数组由项目主题补充图标，通用包不绑定品牌。
  * The project theme supplies an icon for field arrays without BoxJS icon metadata. */
@@ -16,13 +18,13 @@
   background: var(--biliverse-module-logo) center / contain no-repeat;
 }
 @media (prefers-color-scheme: dark) {
-  .pp-panel[data-module="Enhanced"] { --biliverse-module-logo: url("/settings/assets/Enhanced_dark.png"); }
+  .pp-panel[data-module="Enhanced"] { --biliverse-module-logo: url("/settings/assets/Enhanced_subject_dark.png"); }
 }
 :root[data-theme="dark"] .pp-panel[data-module="Enhanced"] {
-  --biliverse-module-logo: url("/settings/assets/Enhanced_dark.png");
+  --biliverse-module-logo: url("/settings/assets/Enhanced_subject_dark.png");
 }
 :root[data-theme="light"] .pp-panel[data-module="Enhanced"] {
-  --biliverse-module-logo: url("/settings/assets/Enhanced_light.png");
+  --biliverse-module-logo: url("/settings/assets/Enhanced_subject_light.png");
 }
 .home-navbar,
 .home-navbar button,

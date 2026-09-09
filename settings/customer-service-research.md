@@ -1,5 +1,11 @@
 # 入口位置与客服中心样式调查
 
+## 2026-09-09：全屏与退出补充
+
+当前 App 入口数据的游戏中心是 `bilibili://game_center/user?sourceFrom=100003`，属于原生路由。数据库中的旧 H5 游戏地址已返回 404。App 二进制和其它现用 H5 地址均包含 `navhide=1`；Biliverse 入口使用此参数关闭原生导航，保留网页常驻顶栏。
+
+本机官方 App 内置 `message-settings-CDqsRNlJ.js` 调用 `biliBridge.useNative("global.closeBrowser")` 关闭页面；`svgs-D7nnNgVc.js` 内 JSBridge 3.3.5 的 V2 传输使用 biliInjectV2.postMessage(JSON.stringify({method,data,callbackId}))。网站复用这两种现有桥接入口，只在项目主页调用退出；模块和二级页仍先沿共同历史返回。普通浏览器使用 history.back。自动测试验证调用协议，原生容器最终效果仍需真机复测。
+
 日期：2026-09-06。三个变更分别提交：入口上移、入口简称、客服中心样式。
 
 ## 我的页面入口

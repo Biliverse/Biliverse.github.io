@@ -1,4 +1,120 @@
 /**
+ * 标题栏共用三点菜单；Shadow DOM 隔离项目样式，保留继承的主题色。
+ * Shared title-bar overflow menu; Shadow DOM isolates layout while inheriting theme colors.
+ */
+class ActionMenu {
+    #button;
+    #popup;
+    #backdrop;
+    #select;
+    #document;
+    #key = event => {
+        if (event.key === "Escape" && !this.#popup.hidden) {
+            event.preventDefault();
+            this.close();
+            this.#button.focus();
+        }
+    };
+
+    /**
+     * 创建菜单，操作逻辑由调用方提供。
+     * Create a menu whose actions are handled by the caller.
+     * @param {(id: string) => void} select 菜单选择回调 / Selection callback.
+     */
+    constructor(select) {
+        this.#document = document;
+        this.#select = select;
+        this.element = document.createElement("span");
+        const root = this.element.attachShadow({ mode: "open" });
+        root.innerHTML = `<style>
+          :host{display:inline-flex;position:relative;width:44px;height:44px;color:inherit}
+          :host([hidden]),[hidden]{display:none!important}
+          button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
+          button:disabled{opacity:.4;cursor:default}
+          button:focus-visible{outline:2px solid currentColor;outline-offset:-3px}
+          #trigger{width:44px;height:44px;padding:10px;position:relative;z-index:3}
+          svg{display:block;width:24px;height:24px;fill:currentColor}
+          #backdrop{position:fixed;inset:0;z-index:1}
+          #items{position:absolute;right:0;top:46px;z-index:2;min-width:160px;padding:6px;background:var(--pp-surface,Canvas);color:var(--pp-text,CanvasText);border:1px solid var(--pp-border,#8884);border-radius:12px;box-shadow:0 8px 28px #0003}
+          #items button{display:block;text-align:left;white-space:nowrap;width:100%;padding:11px 14px;border-radius:8px;font:14px/1.4 system-ui,sans-serif}
+          #items button:hover{background:#8882}
+          #items button[data-danger]{color:#e45656}
+        </style><button id="trigger" type="button" aria-label="更多操作" aria-haspopup="menu" aria-expanded="false" aria-controls="items"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg></button><button id="backdrop" type="button" tabindex="-1" aria-label="关闭菜单" hidden></button><div id="items" role="menu" hidden></div>`;
+        this.#button = root.querySelector("#trigger");
+        this.#popup = root.querySelector("#items");
+        this.#backdrop = root.querySelector("#backdrop");
+        this.#button.onclick = () => {
+            const open = this.#popup.hidden;
+            this.#popup.hidden = this.#backdrop.hidden = !open;
+            this.#button.setAttribute("aria-expanded", String(open));
+            if (open) this.#popup.firstElementChild.focus();
+        };
+        this.#backdrop.onclick = () => this.close();
+        this.#popup.onkeydown = event => {
+            if (event.key === "Tab") {
+                this.close();
+                return;
+            }
+            const items = [...this.#popup.children];
+            const index = items.indexOf(root.activeElement);
+            const offsets = { ArrowDown: 1, ArrowUp: -1 };
+            if (event.key in offsets) {
+                event.preventDefault();
+                items[(index + offsets[event.key] + items.length) % items.length].focus();
+            }
+        };
+        document.addEventListener("keydown", this.#key);
+        this.update([]);
+    }
+
+    /**
+     * 同步可用操作和忙碌状态，不重建菜单触发按钮。
+     * Update actions and busy state without replacing the trigger button.
+     * @param {Array<{id: string, label: string, destructive?: boolean}>} items 操作列表 / Actions.
+     * @param {boolean} [disabled] 是否忙碌 / Whether operations are busy.
+     * @returns {void} 无返回值 / No return value.
+     */
+    update(items, disabled = false) {
+        this.close();
+        this.#button.disabled = disabled || items.length === 0;
+        this.#popup.replaceChildren(
+            ...items.map(item => {
+                const button = this.#document.createElement("button");
+                button.type = "button";
+                button.setAttribute("role", "menuitem");
+                button.textContent = item.label;
+                button.toggleAttribute("data-danger", Boolean(item.destructive));
+                button.onclick = () => {
+                    this.close();
+                    this.#select(item.id);
+                };
+                return button;
+            }),
+        );
+    }
+
+    /**
+     * 关闭菜单。
+     * Close the menu.
+     * @returns {void} 无返回值 / No return value.
+     */
+    close() {
+        this.#popup.hidden = this.#backdrop.hidden = true;
+        this.#button.setAttribute("aria-expanded", "false");
+    }
+
+    /**
+     * 移除监听器与节点。
+     * Remove listeners and elements.
+     * @returns {void} 无返回值 / No return value.
+     */
+    destroy() {
+        this.#document.removeEventListener("keydown", this.#key);
+        this.element.remove();
+    }
+}
+
+/**
  * 统一解析模块页的资源地址：Header 优先于查询参数，再使用模块约定。
  * Resolve module resource locations: headers override query parameters and module conventions.
  * @param {URL} url 已解析的页面请求地址 / Parsed page request URL.
@@ -27,7 +143,7 @@ class ModuleFrame extends EventTarget {
     #abort = () => this.destroy();
     #state;
     #change = event => {
-        this.#state = event.detail;
+        this.#state = { ...event.detail, actions: event.detail.actions ?? [] };
         this.dispatchEvent(new Event("change"));
     };
 
@@ -46,7 +162,7 @@ class ModuleFrame extends EventTarget {
         this.element.title = `${inputs.module} 设置`;
         this.element.dataset.preferencePanes = JSON.stringify(inputs);
         this.element.addEventListener("preferencepanes:change", this.#change);
-        this.#state = { title: inputs.module, module: inputs.module, busy: false, canGoBack: true };
+        this.#state = { title: inputs.module, module: inputs.module, busy: false, canGoBack: true, actions: [] };
         options.signal?.addEventListener("abort", this.#abort, { once: true });
     }
 
@@ -87,6 +203,17 @@ class ModuleFrame extends EventTarget {
     }
 
     /**
+     * 向模块发送菜单操作，不让宿主访问内部 DOM 或存储客户端。
+     * Dispatch a menu action without host access to internal DOM or the storage client.
+     * @param {string} id 当前可用操作 / Available action identifier.
+     * @returns {void} 无返回值 / No return value.
+     */
+    perform(id) {
+        if (this.#state.busy || !this.#state.actions.some(action => action.id === id)) throw new Error("Action is not available");
+        this.element.dispatchEvent(new CustomEvent("preferencepanes:action", { detail: id }));
+    }
+
+    /**
      * 取消加载与事件订阅；节点保留到 Navigation 的退出动画结束。
      * Cancel loading and subscriptions; Navigation retains the node until its exit animation ends.
      * @returns {void} 无返回值 / No return value.
@@ -95,6 +222,93 @@ class ModuleFrame extends EventTarget {
         this.#controller.abort();
         this.#options.signal?.removeEventListener("abort", this.#abort);
         this.element.removeEventListener("preferencepanes:change", this.#change);
+    }
+}
+
+/**
+ * 模块入口的固定状态行，只通过 HEAD 探测安装状态和业务版本。
+ * Fixed module status row, probing installation and business version with HEAD only.
+ */
+class ModuleStatus extends EventTarget {
+    #element;
+    #controller;
+    #state = { status: "checking", version: null };
+
+    /**
+     * 绑定调用方提供的状态行。
+     * Bind a caller-owned status row.
+     * @param {HTMLElement} element 状态文字容器 / Status text container.
+     */
+    constructor(element) {
+        super();
+        this.#element = element;
+        this.#render("checking");
+    }
+
+    /**
+     * 当前安装状态与业务版本。
+     * Current installation state and business version.
+     */
+    get state() {
+        return { ...this.#state };
+    }
+
+    /**
+     * 每次进入重新探测，取消旧请求并忽略其迟到结果。
+     * Reprobe on entry, cancelling old requests and ignoring late results.
+     * @param {string | URL} url 配置 Mock 地址 / Configuration Mock URL.
+     * @returns {Promise<void>} 探测完成 / Probe completion.
+     */
+    async check(url) {
+        this.#controller?.abort();
+        const controller = (this.#controller = new AbortController());
+        this.#render("checking");
+        const timer = setTimeout(() => controller.abort(), 3500);
+        try {
+            const response = await fetch(url, { method: "HEAD", cache: "no-store", credentials: "omit", signal: controller.signal });
+            if (controller !== this.#controller) return;
+            const version = response.headers.get("X-PreferencePanes-Version")?.trim() || null;
+            this.#render(response.status === 200 ? "installed" : "missing", version);
+        } catch {
+            if (controller === this.#controller) this.#render("missing");
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    /**
+     * 更新状态标签，缺少版本时不伪造版本号。
+     * Render the label without inventing a missing version.
+     * @param {"checking" | "installed" | "missing"} status 状态 / State.
+     * @param {string | null} [version] 业务版本 / Business version.
+     * @returns {void} 无返回值 / No return value.
+     */
+    #render(status, version = null) {
+        this.#state = { status, version: status === "installed" ? version : null };
+        switch (status) {
+            case "checking":
+                this.#element.textContent = "检测中";
+                break;
+            case "installed":
+                this.#element.textContent = version ?? "版本未知";
+                break;
+            case "missing":
+                this.#element.textContent = "未安装";
+                break;
+        }
+        this.#element.dataset.state = status;
+        this.#element.title = this.#element.textContent;
+        this.dispatchEvent(new Event("change"));
+    }
+
+    /**
+     * 释放尚未完成的探测。
+     * Release pending probes.
+     * @returns {void} 无返回值 / No return value.
+     */
+    destroy() {
+        this.#controller?.abort();
+        this.#controller = undefined;
     }
 }
 
@@ -257,4 +471,4 @@ class Navigation extends EventTarget {
     }
 }
 
-export { ModuleFrame, Navigation };
+export { ActionMenu, ModuleFrame, ModuleStatus, Navigation };

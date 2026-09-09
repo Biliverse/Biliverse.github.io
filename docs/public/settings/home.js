@@ -1,4 +1,5 @@
-import { Navigation, ModuleFrame } from "/settings/assets/navigation.mjs?v=0.8.0";
+import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.8.1";
+import { inBilibili, closeBilibili } from "./bilibili.mjs";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -12,9 +13,19 @@ const home = document.querySelector(".biliverse-home");
 const navbar = document.querySelector("#app-navbar");
 const homeBack = navbar.querySelector("button");
 const navbarTitle = navbar.querySelector("h1");
+const navbarImage = navbar.querySelector(".pp-brand img");
+const navbarDark = navbar.querySelector(".pp-brand source");
+const homeIcon = { light: navbarImage.getAttribute("src"), dark: navbarDark.getAttribute("srcset") };
 const template = document.querySelector("#module-template");
-let generation = 0;
+const statuses = buttons.map(button => {
+  const status = new ModuleStatus(button.querySelector(".module-status"));
+  status.addEventListener("change", () => { button.disabled = status.state.status !== "installed"; });
+  return { button, status };
+});
 let moduleFrame;
+const actionMenu = new ActionMenu(id => moduleFrame.perform(id));
+navbar.querySelector(".home-nav-spacer").append(actionMenu.element);
+actionMenu.element.hidden = true;
 const navigation = new Navigation(document.querySelector("#pages"), home, (module, signal) => {
   const button = buttons.find(button => button.dataset.module === module);
   if (!button) return;
@@ -29,8 +40,7 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   } });
   moduleFrame = frame;
   frame.addEventListener("change", () => {
-    navbarTitle.textContent = frame.state.title;
-    homeBack.disabled = !frame.state.canGoBack;
+    updateNavbar();
   });
   frame.element.onload = () => { message.hidden = true; };
   host.append(frame.element);
@@ -39,8 +49,12 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   });
   return host;
 });
-navigation.addEventListener("change", () => { navbarTitle.textContent = navigation.current || "Biliverse"; });
-homeBack.onclick = () => navigation.current ? moduleFrame.back() : navigation.back();
+homeBack.onclick = async () => {
+  if (navigation.current) { moduleFrame.back(); return; }
+  if (!inBilibili()) { navigation.back(); return; }
+  try { await closeBilibili(); }
+  catch (error) { window.alert(error.message); }
+};
 // 挂载后观察大图标，滚出导航栏下方的可见区域时切换到栏中央小图标。
 // Observe the mounted hero icon and show its centered compact variant once it scrolls past the bar.
 const brandObserver = new IntersectionObserver(([entry]) => navbar.toggleAttribute("data-compact", !entry.isIntersecting), {
@@ -50,26 +64,33 @@ brandObserver.observe(home.querySelector(".brand-logo"));
 for (const button of buttons) button.onclick = () => navigation.open(button.dataset.module);
 
 /**
+ * 在常驻顶栏同步标题与图标，子页沿用当前模块图标。
+ * Synchronize title and icon in the persistent bar, retaining module branding in child views.
+ * @returns {void} 无返回值 / No return value.
+ */
+function updateNavbar() {
+  const module = navigation.current;
+  const button = module ? buttons.find(button => button.dataset.module === module) : null;
+  navbar.toggleAttribute("data-module", Boolean(module));
+  navbarTitle.textContent = module ? moduleFrame.state.title : "Biliverse";
+  navbarImage.src = button ? button.querySelector("img").getAttribute("src") : homeIcon.light;
+  navbarDark.srcset = button ? button.querySelector("source").getAttribute("srcset") : homeIcon.dark;
+  navbarImage.alt = module ? "" : "Biliverse";
+  homeBack.disabled = module ? !moduleFrame.state.canGoBack : !navigation.canGoBack && !inBilibili();
+  const actions = module ? moduleFrame.state.actions : [];
+  actionMenu.element.hidden = actions.length === 0;
+  actionMenu.update(actions, Boolean(module && moduleFrame.state.busy));
+}
+
+/**
  * 导航到主页时并发探测配置，不读取模块设置。
  * Probe configurations concurrently on home entry without reading module settings.
  * @returns {void} 探测已发起 / Probes started.
  */
 function probe() {
-  navbarTitle.textContent = navigation.current || "Biliverse";
-  homeBack.disabled = !navigation.canGoBack;
+  updateNavbar();
   if (navigation.current) return;
-  const current = ++generation;
-  for (const button of buttons) {
-    button.disabled = true;
-    const status = button.querySelector(".module-status");
-    status.textContent = "检测中";
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    fetch(`/configs/${encodeURIComponent(button.dataset.module)}`, { method: "HEAD", cache: "no-store", credentials: "omit", signal: controller.signal })
-      .then(response => { if (generation === current) { button.disabled = response.status !== 200; status.textContent = button.disabled ? "未响应" : ""; } })
-      .catch(() => { if (generation === current) { button.disabled = true; status.textContent = "未响应"; } })
-      .finally(() => clearTimeout(timer));
-  }
+  for (const { button, status } of statuses) status.check(`/configs/${encodeURIComponent(button.dataset.module)}`);
 }
 navigation.addEventListener("change", probe);
 probe();
