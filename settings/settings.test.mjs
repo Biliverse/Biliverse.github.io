@@ -177,6 +177,7 @@ test("preview uses the common PreferencePanes API and module-owned config artifa
     await mkdir(common, { recursive: true });
     await copyFile(new URL("../scripts/preview-settings.mjs", import.meta.url), path.join(site, "scripts/preview-settings.mjs"));
     await writeFile(path.join(site, "docs/public/settings/Example/index.html"), "<main>static module page</main>");
+    await writeFile(path.join(site, "docs/public/settings/home.js"), '"https://biliverse.github.io/settings/theme.css"; "https://hilo.bilibili.com/h5_common/theme.min.css";');
     await writeFile(path.join(artifacts, "config.dev.bundle.js"), '$done({response:{status:200,body:"example-config"}});');
     await writeFile(path.join(common, "api.js"), '$done({response:{status:200,body:$request.method+" "+$request.url}});');
     child = spawn(process.execPath, [path.join(site, "scripts/preview-settings.mjs")], { env: { ...process.env, PORT: "0" }, stdio: ["ignore", "pipe", "inherit"] });
@@ -192,6 +193,7 @@ test("preview uses the common PreferencePanes API and module-owned config artifa
     });
     assert.equal(await (await fetch(`${base}/settings/Example`)).text(), `GET ${base}/settings/Example`);
     assert.equal(await (await fetch(`${base}/configs/Example`)).text(), "example-config");
+    assert.equal(await (await fetch(`${base}/settings/home.js`)).text(), '"/settings/theme.css"; "https://hilo.bilibili.com/h5_common/theme.min.css";');
     assert.equal((await fetch(`${base}/configs/Example`, { method: "HEAD" })).status, 200);
     const api = `${base}/api/get`;
     assert.equal(await (await fetch(api)).text(), `GET ${api}`);

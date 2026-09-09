@@ -48,7 +48,10 @@ const server = http.createServer(async (request, reply) => {
     try {
       const body = await readFile(target);
       const mime = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json", ".png": "image/png" }[path.extname(target)] ?? "text/plain";
-      const output = overrides && mime.startsWith("text/") ? overrides.rewrite(body.toString()).replaceAll("https://biliverse.github.io/settings/home.css", "/settings/home.css").replaceAll("https://biliverse.github.io/settings/theme.css", "/settings/theme.css") : body;
+      // 本站资源始终来自当前检出；官方资源仅在显式测试模式下替换。
+      // Site resources always use the current checkout; official resources need an explicit test override.
+      const local = mime.startsWith("text/") ? body.toString().replaceAll("https://biliverse.github.io/settings/home.css", "/settings/home.css").replaceAll("https://biliverse.github.io/settings/theme.css", "/settings/theme.css") : body;
+      const output = overrides && typeof local === "string" ? overrides.rewrite(local) : local;
       reply.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-store" }); reply.end(request.method === "HEAD" ? undefined : output);
     } catch (error) {
       if (!["ENOENT", "ENOTDIR"].includes(error.code)) throw error;
