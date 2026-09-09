@@ -6,7 +6,16 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import vm from "node:vm";
-import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, exportCapabilities } from "./bilibili.mjs";
+import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs";
+
+test("native Toast uses the client title payload and does not wait for a nonexistent callback", async () => {
+  let call;
+  const host = { biliBridge: { initPromise: Promise.resolve(), isSupport: async name => name === "biliapp.showToast", callNative: request => { call = request; } } };
+  await toastBilibili("修改成功", host);
+  assert.deepEqual(call, { method: "biliapp.showToast", data: { title: "修改成功" } });
+  host.biliBridge.isSupport = async () => false;
+  await assert.rejects(toastBilibili("失败", host), /不支持/);
+});
 
 test("capability export contains method lists without user or storage data", async () => {
   let copied;

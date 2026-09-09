@@ -150,6 +150,10 @@ class ModuleFrame extends EventTarget {
         const request = new CustomEvent("confirm", { cancelable: true, detail: event.detail });
         if (!this.dispatchEvent(request)) event.preventDefault();
     };
+    #notice = event => {
+        const notice = new CustomEvent("notice", { cancelable: true, detail: event.detail });
+        if (!this.dispatchEvent(notice)) event.preventDefault();
+    };
 
     /**
      * 建立 iframe 与请求输入；调用方挂载 element 后调用 load。
@@ -167,6 +171,7 @@ class ModuleFrame extends EventTarget {
         this.element.dataset.preferencePanes = JSON.stringify(inputs);
         this.element.addEventListener("preferencepanes:change", this.#change);
         this.element.addEventListener("preferencepanes:confirm", this.#confirmation);
+        this.element.addEventListener("preferencepanes:notice", this.#notice);
         this.#state = { title: inputs.module, module: inputs.module, busy: false, canGoBack: true, actions: [] };
         options.signal?.addEventListener("abort", this.#abort, { once: true });
     }
@@ -228,6 +233,7 @@ class ModuleFrame extends EventTarget {
         this.#options.signal?.removeEventListener("abort", this.#abort);
         this.element.removeEventListener("preferencepanes:change", this.#change);
         this.element.removeEventListener("preferencepanes:confirm", this.#confirmation);
+        this.element.removeEventListener("preferencepanes:notice", this.#notice);
     }
 }
 

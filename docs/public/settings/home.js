@@ -1,5 +1,5 @@
-import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.1";
-import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, exportCapabilities } from "./bilibili.mjs?v=official-ui-1";
+import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.2";
+import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs?v=native-toast-1";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -57,6 +57,10 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   if (inBilibili()) frame.addEventListener("confirm", event => {
     event.preventDefault();
     confirmBilibili(event.detail.message).then(event.detail.resolve, event.detail.reject);
+  });
+  if (inBilibili()) frame.addEventListener("notice", event => {
+    event.preventDefault();
+    toastBilibili(event.detail.message).catch(error => window.alert(error.message));
   });
   frame.addEventListener("change", () => {
     updateNavbar();
