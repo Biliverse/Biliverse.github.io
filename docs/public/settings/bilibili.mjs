@@ -87,21 +87,85 @@ export async function exportCapabilities(host = window) {
 }
 
 /**
- * 沿用游戏中心的能力查询及关闭流程，由官方 SDK 管理原生传输和初始化。
- * Follow the game center's capability check and close flow; the official SDK owns transport and initialization.
- * @param {Window} [host] 宿主窗口 / Host window.
- * @returns {Promise<void>} 关闭请求已发出 / Close request dispatched.
+ * 原生导航的状态、异步更新和菜单事件。
+ * Native navigation state, asynchronous updates and menu events.
  */
-export async function closeBilibili(host = window) {
-  const bridge = host.biliBridge;
-  await bridge?.initPromise;
-  if (bridge?.isNewJsBridge() && await bridge.isSupport("global.closeBrowser")) {
-    bridge.callNative({ method: "global.closeBrowser" });
-    return;
+export class NativeNavigation {
+  #bridge;
+  #ready;
+  #queue = Promise.resolve();
+  #revision = 0;
+  #state = { title: "Biliverse", actions: [], busy: false };
+  #destroyed = false;
+  #subscribed = false;
+  #select;
+  #error;
+  #click = result => {
+    if (this.#destroyed) return;
+    if (result.code !== 0) { this.#error(new Error(result.message)); return; }
+    const id = result.data?.id;
+    if (!this.#state.busy && this.#state.actions.some(action => action.id === id)) this.#select(id);
+  };
+
+  /**
+   * 创建原生标题与菜单控制器，原生返回按钮沿客户端历史工作。
+   * Control native titles and menus while the native back button follows client history.
+   * @param {(id: string) => void} select 菜单选择 / Menu selection.
+   * @param {(error: Error) => void} error 原生通道错误 / Native channel error.
+   * @param {Window} [host] 宿主窗口 / Host window.
+   */
+  constructor(select, error, host = window) {
+    this.#bridge = host.biliBridge;
+    this.#select = select;
+    this.#error = error;
+    this.#ready = this.#connect();
   }
-  if (typeof host.biliapp?.closeBrowser === "function") {
-    host.biliapp.closeBrowser();
-    return;
+
+  /**
+   * 恢复原生栏并订阅官方点击通道。
+   * Restore the native bar and subscribe to official click events.
+   * @returns {Promise<void>} 初始化完成 / Initialization completed.
+   */
+  async #connect() {
+    await this.#bridge.initPromise;
+    if (this.#destroyed) return;
+    this.#bridge.callNative({ method: "ui.showNavigation" });
+    this.#bridge.callNative({ method: "ui.setTitle", data: { title: "Biliverse" } });
+    const supported = await Promise.all(["ui.setNavigationButton", "ui.observeNavigationClick"].map(method => this.#bridge.canIUse(method)));
+    if (!supported.every(Boolean)) throw new Error("客户端不支持原生导航菜单");
+    if (this.#destroyed) return;
+    this.#bridge.addChannel("ui.observeNavigationClick", this.#click);
+    this.#subscribed = true;
   }
-  throw new Error("客户端未提供可用的关闭接口，请使用 App 的返回手势。");
+
+  /**
+   * 串行同步标题和菜单，跳过尚未发送的过期状态。
+   * Serialize title/menu updates and skip superseded states before dispatch.
+   * @param {{title: string, actions: Array<{id: string, label: string}>, busy: boolean}} state 当前页面状态 / Current page state.
+   * @returns {Promise<void>} 同步完成 / Synchronization completed.
+   */
+  update(state) {
+    this.#state = state;
+    const revision = ++this.#revision;
+    const render = async () => {
+      await this.#ready;
+      if (this.#destroyed || revision !== this.#revision) return;
+      this.#bridge.callNative({ method: "ui.setTitle", data: { title: state.title } });
+      const buttons = !state.busy && state.actions.length ? [{ id: "biliverse.more", type: 3, menu: { content: state.actions.map(action => ({ id: action.id, text: action.label })) }, visible: true }] : [];
+      await this.#bridge.useNative("ui.setNavigationButton", { buttons });
+    };
+    this.#queue = this.#queue.then(render, render);
+    return this.#queue;
+  }
+
+  /**
+   * 释放通道并阻止迟到更新。
+   * Release the channel and prevent late updates.
+   * @returns {void} 无返回值 / No return value.
+   */
+  destroy() {
+    this.#destroyed = true;
+    this.#revision++;
+    if (this.#subscribed) this.#bridge.removeChannel("ui.observeNavigationClick", this.#click);
+  }
 }

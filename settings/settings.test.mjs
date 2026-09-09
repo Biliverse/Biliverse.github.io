@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import vm from "node:vm";
-import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs";
+import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs";
 
 test("native Toast uses the client title payload and does not wait for a nonexistent callback", async () => {
   let call;
@@ -92,36 +92,73 @@ test("website mocks return same-build resources without requests or storage acce
   }
 });
 
-test("app exit queries the game-center capability before calling the official SDK", async () => {
-  const calls = [];
-  const browser = { navigator: { userAgent: "Mozilla/5.0" } };
-  assert.equal(inBilibili(browser), false);
-  const app = { ...browser, biliBridge: {
-    inBiliApp: true,
-    isNewJsBridge: () => true,
-    isSupport: async method => { calls.push(["support", method]); return true; },
-    callNative: request => calls.push(["call", request]),
-  } };
-  assert.equal(inBilibili(app), true);
-  await closeBilibili(app);
-  assert.deepEqual(calls, [["support", "global.closeBrowser"], ["call", { method: "global.closeBrowser" }]]);
-  await assert.rejects(closeBilibili(browser), /App/);
+test("native navigation uses official titles and built-in more menus; only active actions dispatch", async () => {
+  const calls = [], selected = [], errors = [];
+  let listener, removed;
+  const bridge = {
+    inBiliApp: true, initPromise: Promise.resolve(), canIUse: async () => true,
+    callNative: request => calls.push(request),
+    useNative: async (method, data) => calls.push({ method, data }),
+    addChannel: (name, callback) => { assert.equal(name, "ui.observeNavigationClick"); listener = callback; },
+    removeChannel: (name, callback) => { removed = [name, callback]; },
+  };
+  assert.equal(inBilibili({ biliBridge: bridge }), true);
+  assert.equal(inBilibili({ navigator: { userAgent: "Mozilla" } }), false);
+  const navigation = new NativeNavigation(id => selected.push(id), error => errors.push(error), { biliBridge: bridge });
+  const actions = [{ id: "viewCaches", label: "查看缓存" }, { id: "reset", label: "重置模块" }];
+  await navigation.update({ title: "Enhanced", actions, busy: false });
+  assert.equal(calls[0].method, "ui.showNavigation");
+  assert.deepEqual(calls.at(-2), { method: "ui.setTitle", data: { title: "Enhanced" } });
+  assert.deepEqual(calls.at(-1), { method: "ui.setNavigationButton", data: { buttons: [{
+    id: "biliverse.more", type: 3, menu: { content: [{ id: "viewCaches", text: "查看缓存" }, { id: "reset", text: "重置模块" }] }, visible: true,
+  }] } });
+  listener({ code: 0 });
+  listener({ code: 0, data: { id: "unknown" } });
+  listener({ code: 0, data: { id: "viewCaches" } });
+  const saving = navigation.update({ title: "Enhanced", actions, busy: true });
+  listener({ code: 0, data: { id: "reset" } });
+  await saving;
+  assert.deepEqual(calls.at(-1).data, { buttons: [] });
+  await navigation.update({ title: "Biliverse", actions: [], busy: false });
+  listener({ code: 0, data: { id: "reset" } });
+  listener({ code: 103, message: "channel unavailable" });
+  assert.equal(errors[0].message, "channel unavailable");
+  navigation.destroy();
+  assert.deepEqual(removed, ["ui.observeNavigationClick", listener]);
+  assert.deepEqual(selected, ["viewCaches"]);
 });
 
-test("legacy game-center exit remains available without a modern close capability", async () => {
-  let closed = 0;
-  const app = { navigator: { userAgent: "Mozilla/5.0" }, biliapp: { closeBrowser: () => closed++ } };
-  assert.equal(inBilibili(app), true);
-  await closeBilibili(app);
-  app.biliBridge = { isNewJsBridge: () => true, isSupport: async () => false, callNative: () => assert.fail("Unsupported call") };
-  await closeBilibili(app);
-  assert.equal(closed, 2);
-  delete app.biliapp;
-  await assert.rejects(closeBilibili(app), /未提供/);
-  app.biliBridge.isSupport = async () => { throw new Error("Bridge unavailable"); };
-  await assert.rejects(closeBilibili(app), /Bridge unavailable/);
-  app.biliBridge.isNewJsBridge = () => false;
-  await assert.rejects(closeBilibili(app), /未提供/);
+test("native updates are serialized and superseded states are discarded", async () => {
+  const calls = [];
+  let complete;
+  const bridge = {
+    initPromise: Promise.resolve(), canIUse: async () => true,
+    callNative() {}, addChannel() {}, removeChannel() {},
+    useNative: (method, data) => { calls.push(data); return new Promise(resolve => { complete = resolve; }); },
+  };
+  const navigation = new NativeNavigation(() => {}, assert.fail, { biliBridge: bridge });
+  const first = navigation.update({ title: "Module", actions: [{ id: "reset", label: "Reset" }], busy: false });
+  await new Promise(resolve => setImmediate(resolve));
+  const second = navigation.update({ title: "Outdated", actions: [{ id: "viewCaches", label: "View" }], busy: false });
+  const last = navigation.update({ title: "Biliverse", actions: [], busy: false });
+  assert.equal(calls.length, 1);
+  complete();
+  await first;
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1], { buttons: [] });
+  complete();
+  await Promise.all([second, last]);
+  navigation.destroy();
+  await navigation.update({ title: "late", actions: [], busy: false });
+  assert.equal(calls.length, 2);
+});
+
+test("unsupported native menus surface failure without constructing a web navigation fallback", async () => {
+  const bridge = { initPromise: Promise.resolve(), canIUse: async () => false, callNative() {}, addChannel: assert.fail };
+  const navigation = new NativeNavigation(assert.fail, assert.fail, { biliBridge: bridge });
+  await assert.rejects(navigation.update({ title: "Biliverse", actions: [], busy: false }), /不支持原生导航菜单/);
+  navigation.destroy();
 });
 
 test("preview uses the common PreferencePanes API and module-owned config artifacts", { timeout: 15000 }, async () => {
@@ -175,7 +212,8 @@ test("website deploys only generic frontend assets and owns the custom landing p
   const build = await readFile(new URL("../scripts/build-settings.mjs", import.meta.url), "utf8");
   const assets = await readdir(new URL("../docs/public/settings/assets/", import.meta.url));
   assert.equal((html.match(/data-module=/g) ?? []).length, 4);
-  assert.ok(html.includes("<h1>Biliverse</h1>"));
+  assert.match(html, /class="brand-logo"/);
+  assert.doesNotMatch(html + script, /app-navbar|homeBack|ActionMenu|IntersectionObserver|closeBilibili/);
   assert.doesNotMatch(script, /\/api\/|mount\(|srcdoc|DOMParser|\.replace\(|pushState|\.animate\(/);
   assert.match(script, /new ModuleStatus/);
   assert.match(script, /ModuleFrame/);
