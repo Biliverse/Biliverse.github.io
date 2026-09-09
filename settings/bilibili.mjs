@@ -9,6 +9,26 @@ export function inBilibili(host = window) {
 }
 
 /**
+ * 直接订阅官方 SDK 的主题和键盘事件，监听器随宿主文档释放。
+ * Subscribe to official SDK theme and keyboard events for the host document's lifetime.
+ * @param {{theme: (value: {theme: number, night: number}) => void, keyboard: (height: number) => void}} callbacks 环境更新回调 / Environment callbacks.
+ * @param {Window} [host] 宿主窗口 / Host window.
+ * @returns {Promise<void>} 已完成能力查询和事件注册 / Capability checks and subscriptions completed.
+ */
+export async function observeAppearance(callbacks, host = window) {
+  if (!inBilibili(host)) return;
+  const bridge = host.biliBridge;
+  await bridge.initPromise;
+  const registrations = [
+    { method: "ui.observeThemeChange", data: { immediately: true }, onChangeTheme: callbacks.theme },
+    { method: "ui.observeKeyboardStatus", data: {}, onShow: ({ height }) => callbacks.keyboard(height), onHide: () => callbacks.keyboard(0), onChangeHeight: ({ height }) => callbacks.keyboard(height) },
+  ];
+  await Promise.all(registrations.map(async registration => {
+    if (await bridge.isSupport(registration.method)) bridge.callNative(registration);
+  }));
+}
+
+/**
  * 沿用游戏中心的能力查询及关闭流程，由官方 SDK 管理原生传输和初始化。
  * Follow the game center's capability check and close flow; the official SDK owns transport and initialization.
  * @param {Window} [host] 宿主窗口 / Host window.

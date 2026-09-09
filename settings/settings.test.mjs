@@ -6,7 +6,27 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import vm from "node:vm";
-import { inBilibili, closeBilibili } from "./bilibili.mjs";
+import { inBilibili, closeBilibili, observeAppearance } from "./bilibili.mjs";
+
+test("official appearance callbacks drive live theme and keyboard changes", async () => {
+  const subscriptions = new Map(), themes = [], heights = [];
+  const host = { navigator: { userAgent: "BiliApp" }, biliBridge: {
+    initPromise: Promise.resolve(), isSupport: async () => true,
+    callNative: options => subscriptions.set(options.method, options),
+  } };
+  await observeAppearance({ theme: value => themes.push(value), keyboard: height => heights.push(height) }, host);
+  const theme = subscriptions.get("ui.observeThemeChange");
+  assert.equal(theme.data.immediately, true);
+  theme.onChangeTheme({ theme: 2, night: 1 });
+  theme.onChangeTheme({ theme: 1, night: 0 });
+  assert.deepEqual(themes, [{ theme: 2, night: 1 }, { theme: 1, night: 0 }]);
+  const keyboard = subscriptions.get("ui.observeKeyboardStatus");
+  keyboard.onShow({ height: 320 });
+  keyboard.onChangeHeight({ height: 280 });
+  keyboard.onHide();
+  assert.deepEqual(heights, [320, 280, 0]);
+  await observeAppearance({ theme() { assert.fail(); }, keyboard() { assert.fail(); } }, { navigator: { userAgent: "Mozilla" } });
+});
 
 test("website mocks return same-build resources without requests or storage access", async () => {
   const source = await readFile(new URL("../docs/public/settings/mock.js", import.meta.url), "utf8");

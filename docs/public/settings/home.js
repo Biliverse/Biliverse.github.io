@@ -1,13 +1,16 @@
 import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.8.1";
-import { inBilibili, closeBilibili } from "./bilibili.mjs?v=0.8.1-close";
+import { inBilibili, closeBilibili, observeAppearance } from "./bilibili.mjs?v=appearance-1";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
-const theme = navigator.userAgent.match(/themeId\/(\d+)/)?.[1];
-if (theme) {
-  document.documentElement.dataset.theme = theme === "2" ? "dark" : "light";
-  for (const source of document.querySelectorAll("picture source")) source.media = theme === "2" ? "all" : "not all";
-}
+observeAppearance({
+  theme: ({ theme, night }) => {
+    const dark = theme === 2 || night === 1;
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    for (const source of document.querySelectorAll("picture source")) source.media = dark ? "all" : "not all";
+  },
+  keyboard: height => document.documentElement.style.setProperty("--pp-keyboard-height", `${height}px`),
+}).catch(error => console.error("Bilibili appearance subscription failed", error));
 const buttons = [...document.querySelectorAll("button[data-module]")];
 const home = document.querySelector(".biliverse-home");
 const navbar = document.querySelector("#app-navbar");
