@@ -13,8 +13,8 @@ globalThis.$persistentStore = { read: key => store.get(key) ?? null, write: (val
 globalThis.$argument = {};
 // Migrated modules execute the site-hosted script; legacy modules still use their business entry.
 const names = ["Global", "Redirect", "ADBlock"];
-test("site-hosted Enhanced script works without Enhanced code or arguments", async () => {
-  const script = await readFile(new URL("../docs/public/settings/assets/Enhanced.request.js", import.meta.url), "utf8");
+test("standalone core cannot impersonate a module configuration Mock", async () => {
+  const script = await readFile(new URL("../docs/public/settings/assets/PreferencePanes.request.js", import.meta.url), "utf8");
   const data = new Map([["BiliBili", JSON.stringify({ Global: { sentinel: true } })]]);
   let downloads = 0;
   const run = (method, pathname, value) => new Promise(resolve => vm.runInNewContext(script, {
@@ -24,13 +24,32 @@ test("site-hosted Enhanced script works without Enhanced code or arguments", asy
     $request: { url: `https://biliverse.github.io${pathname}`, method, headers: { "X-Settings-Client": "1", "Content-Type": "application/json" }, body: JSON.stringify(value) },
     $done: result => resolve(result.response), console: { log() {}, error() {} }, setTimeout, clearTimeout,
   }));
-  assert.equal((await run("HEAD", "/configs/Enhanced")).status, 200);
-  assert.equal(downloads, 1);
+  assert.equal(await run("HEAD", "/configs/Enhanced"), undefined);
+  assert.equal(await run("GET", "/configs/Enhanced"), undefined);
+  assert.equal(downloads, 0);
   assert.equal((await run("POST", "/api/Enhanced/Settings/Home/Top_left", "mine")).status, 200);
   assert.equal(JSON.parse((await run("GET", "/api/Enhanced/Settings/Home/Top_left")).body), "mine");
   assert.equal((await run("DELETE", "/api/Enhanced/")).status, 200);
   assert.deepEqual(JSON.parse(data.get("BiliBili")), { Global: { sentinel: true } });
-  assert.equal(downloads, 1, "API operations never download configuration");
+  assert.equal(downloads, 0, "API operations never download configuration");
+});
+
+test("standalone installation rules never claim configuration URLs", async () => {
+  for (const extension of ["sgmodule", "plugin", "snippet", "stoverride", "conf"]) {
+    const text = await readFile(new URL(`PreferencePanes.${extension}`, import.meta.url), "utf8");
+    assert.ok(text.includes("PreferencePanes.request.js"));
+    assert.doesNotMatch(text, /configs|Enhanced\.config/);
+    const patterns = text.split("\n").flatMap(line => {
+      if (line.includes("pattern=")) return [line.match(/pattern=([^,]+)/)[1]];
+      if (line.includes("- match:")) return [line.trim().slice("- match: ".length)];
+      if (line.startsWith("http-request ")) return [line.split(" ")[1]];
+      if (line.startsWith("^")) return [line.split(" ")[0]];
+      return [];
+    }).map(pattern => new RegExp(pattern));
+    assert.ok(patterns.some(pattern => pattern.test("https://biliverse.github.io/api/Enhanced/Settings/")), extension);
+    for (const url of ["https://biliverse.github.io/configs/Enhanced", "https://biliverse.github.io/settings/assets/Enhanced.config.js", "https://biliverse.github.io/settings/assets/PreferencePanes.request.js"])
+      assert.ok(patterns.every(pattern => !pattern.test(url)), extension);
+  }
 });
 const requests = {};
 for (const name of names) requests[name] = (await import(pathToFileURL(path.join(root, name, "src/process/Request.mjs")))).Request;
@@ -85,9 +104,9 @@ test("native Mock targets resolve to Pages files and cannot intercept their own 
   const publicDir = path.join(root, "Biliverse.github.io/docs/public");
   for (const name of names) {
     const asset = await readFile(path.join(publicDir, `settings/assets/${name}.html`), "utf8");
-    assert.ok(asset.includes('<link rel="stylesheet" href="https://s1.hdslb.com/bfs/static/2233-monorepo/customer-service-h5/static/css/index.545c1c91.css">'));
+    assert.ok(asset.includes('/settings/assets/app.mjs?v='));
     assert.equal(asset, await readFile(path.join(publicDir, `settings/${name}/index.html`), "utf8"));
-    assert.match(asset, /data:image\/png;base64/);
+    assert.doesNotMatch(asset, /const MODULE|const fields|data:image\/png;base64/);
     const dir = path.join(root, name, "template");
     for (const filename of ["surge.handlebars", "surge.dev.handlebars", "loon.handlebars", "loon.dev.handlebars"]) {
       const template = await readFile(path.join(dir, filename), "utf8");

@@ -1,0 +1,15 @@
+name: Biliverse PreferencePanes
+desc: 通用设置页面与持久化读写。设置入口仅由各插件的 BoxJS JSON Mock 决定。
+openUrl: https://biliverse.github.io/settings/
+http:
+  mitm:
+    - biliverse.github.io
+  script:
+    - match: ^https:\/\/biliverse\.github\.io\/(?:api\/[^?]*|settings\/(?:[a-zA-Z0-9_-]+\/?)?)(?:\?.*)?$
+      name: PreferencePanes
+      type: request
+      require-body: true
+script-providers:
+  PreferencePanes:
+    url: https://biliverse.github.io/settings/assets/PreferencePanes.request.js
+    interval: 86400

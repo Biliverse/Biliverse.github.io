@@ -1,0 +1,9 @@
+#!name = Biliverse PreferencePanes
+#!desc = 通用设置页面与持久化读写。设置入口仅由各插件的 BoxJS JSON Mock 决定。
+#!homepage = https://github.com/NSNanoCat/PreferencePanes
+
+#[rewrite_local]
+^https:\/\/biliverse\.github\.io\/(?:api\/[^?]*|settings\/(?:[a-zA-Z0-9_-]+\/?)?)(?:\?.*)?$ url script-echo-response https://biliverse.github.io/settings/assets/PreferencePanes.request.js
+
+#[mitm]
+hostname = biliverse.github.io

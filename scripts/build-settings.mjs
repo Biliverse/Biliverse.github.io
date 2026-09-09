@@ -58,13 +58,19 @@ for (const name of ["index.html", "app.mjs", "panel.css", "home.css"])
   outputs.set(path.join(root, "docs/public/settings/assets", name), await readFile(fileURLToPath(import.meta.resolve(`@nsnanocat/preference-panes/dist/settings/${name}`))));
 outputs.set(path.join(root, "docs/public/settings/assets/site.boxjs.json"), await readFile(path.join(source, "site.boxjs.json")));
 const proxyRuntime = await readFile(fileURLToPath(import.meta.resolve("@nsnanocat/preference-panes/dist/preference-panes.proxy.js")), "utf8");
-for (const installation of JSON.parse(await read("proxies.json")))
-  outputs.set(path.join(root, `docs/public/settings/assets/${installation.module}.request.js`), `${proxyRuntime}\nPreferencePanes.runPreferences(${JSON.stringify(installation)});\n`);
-outputs.set(path.join(root, "docs/public/settings/assets/Enhanced.boxjs.json"), await readFile(path.join(repositories, "Enhanced/template/boxjs.settings.json")));
+outputs.set(path.join(root, "docs/public/settings/assets/PreferencePanes.request.js"), `${proxyRuntime}\nPreferencePanes.runPreferences(${JSON.stringify(JSON.parse(await read("proxies.json")))});\n`);
+const boxjs = await readFile(path.join(repositories, "Enhanced/template/boxjs.settings.json"), "utf8");
+outputs.set(path.join(root, "docs/public/settings/assets/Enhanced.boxjs.json"), boxjs);
+const configRuntime = await readFile(fileURLToPath(import.meta.resolve("@nsnanocat/preference-panes/dist/preference-panes.config.js")), "utf8");
+outputs.set(path.join(root, "docs/public/settings/assets/Enhanced.config.js"), `${configRuntime}\nPreferencePanes.mockConfiguration(${JSON.stringify(JSON.parse(boxjs))});\n`);
+for (const extension of ["sgmodule", "plugin", "snippet", "stoverride", "conf"])
+  outputs.set(path.join(root, `docs/public/settings/PreferencePanes.${extension}`), await readFile(path.join(source, `PreferencePanes.${extension}`)));
 const enhancedPage = outputs.get(path.join(root, "docs/public/settings/assets/index.html"));
 outputs.set(path.join(root, "docs/public/settings/index.html"), enhancedPage);
-outputs.set(path.join(root, "docs/public/settings/Enhanced/index.html"), enhancedPage);
-outputs.set(path.join(root, "docs/public/settings/assets/Enhanced.html"), enhancedPage);
+for (const { module } of site.apps) {
+  outputs.set(path.join(root, `docs/public/settings/${module}/index.html`), enhancedPage);
+  outputs.set(path.join(root, `docs/public/settings/assets/${module}.html`), enhancedPage);
+}
 for (const [filename, text] of outputs) {
   if (check) {
     if (!(await readFile(filename)).equals(Buffer.from(text))) throw new Error(`Settings generated file is stale: ${filename}`);
