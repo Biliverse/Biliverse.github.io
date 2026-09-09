@@ -1,5 +1,15 @@
 # 入口位置与客服中心样式调查
 
+## 2026-09-10：原版设置样式及页面内导出
+
+按用户提供的“从电脑上的 App 取文件”方案，PreferencePanes 0.9.0 使用本机国际版 6.4.0/91000200 内置的 b-style 4.0.1 和 AppSettings 1.1.2 原版 CSS。文件原文及 SHA-256 保存在包的 `src/browser/vendor`，不复制业务 JavaScript；通用控件只适配原版 CSS 的 DOM 类名和固定作用域标记。原手写开关、设置行、输入框外观和颜色表已删除。默认样式放在 CSS layer 内，项目 CSS 保持覆盖能力。
+
+网站提供 `settings/official/` 原文件镜像和 `settings/official-styles.zip` 下载包，明确属于官方文件镜像，不是官方公网 CDN。无需手机连接电脑即可下载。JSBridge SDK 仍直接引用 s1.hdslb.com 官方地址。
+
+主题和键盘接收官方 SDK 事件；清空缓存和重置通过 `ability.alert` 原生确认，参数由本机原生实现核实。搜索使用官方 VField 外观，本地过滤已读取的 BoxJS 字段。
+
+导航按钮仍需核对目标容器。已从本机 Swift 字段元数据取得 CommonButton 的 id/type/content/url/badge/menu/visible，以及按钮点击结果 id；尚未确认可覆盖居中 logo＋标题和当前返回行为，因此未删除现有公共导航。页面内“复制客户端能力”只导出 SDK 版本及 V1/V2 方法清单，不读取用户资料和持久化配置。
+
 ## 2026-09-09：官方域名下的本机 Mock 入口
 
 用户截图确认 `0454427` 版本仍不能退出。本机客户端存在 JSBridge URL 白名单，在方法分发之前检查来源域名；失败会记录 `is not allowed to call jsbridge method!` 后返回。github.io 不在内置名单中，单独加载官方 SDK 不会改变网页来源。

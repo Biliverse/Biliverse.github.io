@@ -48,6 +48,31 @@ export async function confirmBilibili(message, host = window) {
 }
 
 /**
+ * 导出当前容器的方法清单到剪贴板，不读取用户资料或持久化配置。
+ * Export container methods to the clipboard without reading user information or persistent settings.
+ * @param {Window} [host] 宿主窗口 / Host window.
+ * @returns {Promise<void>} 已复制能力清单 / Capabilities copied.
+ */
+export async function exportCapabilities(host = window) {
+  const bridge = host.biliBridge;
+  let timer, expired = false;
+  try {
+    await Promise.race([
+      (async () => {
+        await bridge.initPromise;
+        const v1 = await new Promise(resolve => bridge.callNative({ method: "global.getAllSupport", callback: resolve }));
+        const v2 = bridge.isBiliInjectV2() ? await bridge.useNative("global.getAllSupport") : null;
+        const content = JSON.stringify({ sdk: bridge.jsbVersion, v1, v2: v2?.data ?? null }, null, 2);
+        if (!(await bridge.isSupport("ability.copyToClipboard"))) throw new Error("客户端不支持复制能力清单");
+        if (expired) return;
+        await new Promise((resolve, reject) => bridge.callNative({ method: "ability.copyToClipboard", data: { content }, callback: result => result?.code === 0 ? resolve() : reject(new Error("复制失败")) }));
+      })(),
+      new Promise((_, reject) => { timer = setTimeout(() => { expired = true; reject(new Error("客户端未响应能力导出请求")); }, 10000); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
+/**
  * 沿用游戏中心的能力查询及关闭流程，由官方 SDK 管理原生传输和初始化。
  * Follow the game center's capability check and close flow; the official SDK owns transport and initialization.
  * @param {Window} [host] 宿主窗口 / Host window.

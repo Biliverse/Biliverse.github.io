@@ -1,5 +1,5 @@
-import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.8.1";
-import { inBilibili, closeBilibili, observeAppearance, confirmBilibili } from "./bilibili.mjs?v=native-dialog-1";
+import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.0";
+import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, exportCapabilities } from "./bilibili.mjs?v=official-ui-1";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -7,10 +7,22 @@ observeAppearance({
   theme: ({ theme, night }) => {
     const dark = theme === 2 || night === 1;
     document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.documentElement.classList.toggle("bili_dark", dark);
     for (const source of document.querySelectorAll("picture source")) source.media = dark ? "all" : "not all";
   },
   keyboard: height => document.documentElement.style.setProperty("--pp-keyboard-height", `${height}px`),
 }).catch(error => console.error("Bilibili appearance subscription failed", error));
+const exportButton = document.querySelector("#export-capabilities");
+exportButton.hidden = !inBilibili();
+exportButton.onclick = async () => {
+  const status = document.querySelector("#export-status");
+  exportButton.disabled = true;
+  try {
+    await exportCapabilities();
+    status.textContent = "能力清单已复制，可粘贴分享。";
+  } catch (error) { status.textContent = error.message; }
+  finally { exportButton.disabled = false; }
+};
 const buttons = [...document.querySelectorAll("button[data-module]")];
 const home = document.querySelector(".biliverse-home");
 const navbar = document.querySelector("#app-navbar");
@@ -39,7 +51,7 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   status.textContent = "正在打开设置…";
   const frame = new ModuleFrame(button.dataset.page, { signal, headers: {
     "X-PreferencePanes-JSON": `/configs/${module}`,
-    "X-PreferencePanes-CSS": "/settings/theme.css",
+    "X-PreferencePanes-CSS": "/settings/theme.css?v=0.9.0",
   } });
   moduleFrame = frame;
   if (inBilibili()) frame.addEventListener("confirm", event => {

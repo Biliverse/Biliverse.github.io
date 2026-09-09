@@ -6,7 +6,21 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import vm from "node:vm";
-import { inBilibili, closeBilibili, observeAppearance, confirmBilibili } from "./bilibili.mjs";
+import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, exportCapabilities } from "./bilibili.mjs";
+
+test("capability export contains method lists without user or storage data", async () => {
+  let copied;
+  const host = { biliBridge: {
+    jsbVersion: "3.3.5", initPromise: Promise.resolve(), isSupport: async () => true, isBiliInjectV2: () => true,
+    useNative: async () => ({ data: { methods: ["ui.setNavigationButton"] } }),
+    callNative: options => {
+      if (options.method === "global.getAllSupport") options.callback(["global.closeBrowser"]);
+      else { copied = JSON.parse(options.data.content); options.callback({ code: 0 }); }
+    },
+  } };
+  await exportCapabilities(host);
+  assert.deepEqual(copied, { sdk: "3.3.5", v1: ["global.closeBrowser"], v2: { methods: ["ui.setNavigationButton"] } });
+});
 
 test("native confirmations use validated button fields and wait for a user decision", async () => {
   let call;

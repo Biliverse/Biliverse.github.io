@@ -1,0 +1,31 @@
+{
+    "app": "com.bilibili.inter",
+    "version": "6.4.0",
+    "build": "91000200",
+    "styleVersion": "4.0.1",
+    "settingsVersion": "1.1.2",
+    "rowScope": "data-v-b69aa1ea",
+    "groupScope": "data-v-e590be47",
+    "files": [
+        {
+            "file": "theme.min.css",
+            "source": "srcs.base.web.container.h5.common.generated.resources/files/h5_common/theme.min.css",
+            "sha256": "37e6ca3c469a953f1fad4b302744d0d283d4bad47ca6ac30ac504319ecb76576"
+        },
+        {
+            "file": "b-style.min.css",
+            "source": "srcs.base.web.container.h5.common.generated.resources/files/h5_common/b-style.min.css",
+            "sha256": "76f9cd6521ddf1eab01f8bffc97ed42861bb1c90b4482cb84ca54cc9d83aa5da"
+        },
+        {
+            "file": "messageSettingsLayout-ltzQ1gMi.css",
+            "source": "srcs.app.settings.h5.res.generated.resources/files/app_settings/assets/messageSettingsLayout-ltzQ1gMi.css",
+            "sha256": "285755bdcb1dab728afac325a19b048ed91e05c37f20ec2155d4ca24fdb58a4a"
+        },
+        {
+            "file": "message-settings-BD3N1lqQ.css",
+            "source": "srcs.app.settings.h5.res.generated.resources/files/app_settings/assets/message-settings-BD3N1lqQ.css",
+            "sha256": "b1257cc068115767a0948b9850e2dcadbdf5ded780a6821bc92d25e637779f7c"
+        }
+    ]
+}
