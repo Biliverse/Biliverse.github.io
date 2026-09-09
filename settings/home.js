@@ -1,5 +1,5 @@
 import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.8.1";
-import { inBilibili, closeBilibili } from "./bilibili.mjs";
+import { inBilibili, closeBilibili } from "./bilibili.mjs?v=0.8.1-close";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
