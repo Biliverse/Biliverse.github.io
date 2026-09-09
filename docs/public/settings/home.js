@@ -1,4 +1,4 @@
-import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.1";
+import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.2";
 import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs?v=native-toast-1";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
