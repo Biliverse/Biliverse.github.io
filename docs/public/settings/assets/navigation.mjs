@@ -51,6 +51,10 @@ class ActionMenu {
         };
         this.#backdrop.onclick = () => this.close();
         this.#popup.onkeydown = event => {
+            if (event.key === "Tab") {
+                this.close();
+                return;
+            }
             const items = [...this.#popup.children];
             const index = items.indexOf(root.activeElement);
             const offsets = { ArrowDown: 1, ArrowUp: -1 };
