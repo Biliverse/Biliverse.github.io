@@ -61,10 +61,11 @@ body {
 	height: 100%;
 	object-fit: contain;
 }
-.home-navbar[data-compact] .pp-brand-icon {
+.home-navbar[data-compact] .pp-brand-icon,
+.home-navbar[data-module] .pp-brand-icon {
 	display: block;
 }
-.home-navbar[data-compact] h1 {
+.home-navbar[data-compact]:not([data-module]) h1 {
 	display: none;
 }
 .home-navbar h1 {

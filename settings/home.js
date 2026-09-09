@@ -13,6 +13,9 @@ const home = document.querySelector(".biliverse-home");
 const navbar = document.querySelector("#app-navbar");
 const homeBack = navbar.querySelector("button");
 const navbarTitle = navbar.querySelector("h1");
+const navbarImage = navbar.querySelector(".pp-brand img");
+const navbarDark = navbar.querySelector(".pp-brand source");
+const homeIcon = { light: navbarImage.getAttribute("src"), dark: navbarDark.getAttribute("srcset") };
 const template = document.querySelector("#module-template");
 let generation = 0;
 let moduleFrame;
@@ -30,8 +33,7 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   } });
   moduleFrame = frame;
   frame.addEventListener("change", () => {
-    navbarTitle.textContent = frame.state.title;
-    homeBack.disabled = !frame.state.canGoBack;
+    updateNavbar();
   });
   frame.element.onload = () => { message.hidden = true; };
   host.append(frame.element);
@@ -40,7 +42,6 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   });
   return host;
 });
-navigation.addEventListener("change", () => { navbarTitle.textContent = navigation.current || "Biliverse"; });
 homeBack.onclick = async () => {
   if (navigation.current) { moduleFrame.back(); return; }
   if (!inBilibili()) { navigation.back(); return; }
@@ -56,13 +57,28 @@ brandObserver.observe(home.querySelector(".brand-logo"));
 for (const button of buttons) button.onclick = () => navigation.open(button.dataset.module);
 
 /**
+ * 在常驻顶栏同步标题与图标，子页沿用当前模块图标。
+ * Synchronize title and icon in the persistent bar, retaining module branding in child views.
+ * @returns {void} 无返回值 / No return value.
+ */
+function updateNavbar() {
+  const module = navigation.current;
+  const button = module ? buttons.find(button => button.dataset.module === module) : null;
+  navbar.toggleAttribute("data-module", Boolean(module));
+  navbarTitle.textContent = module ? moduleFrame.state.title : "Biliverse";
+  navbarImage.src = button ? button.querySelector("img").getAttribute("src") : homeIcon.light;
+  navbarDark.srcset = button ? button.querySelector("source").getAttribute("srcset") : homeIcon.dark;
+  navbarImage.alt = module ? "" : "Biliverse";
+  homeBack.disabled = module ? !moduleFrame.state.canGoBack : !navigation.canGoBack && !inBilibili();
+}
+
+/**
  * 导航到主页时并发探测配置，不读取模块设置。
  * Probe configurations concurrently on home entry without reading module settings.
  * @returns {void} 探测已发起 / Probes started.
  */
 function probe() {
-  navbarTitle.textContent = navigation.current || "Biliverse";
-  homeBack.disabled = !navigation.canGoBack && !inBilibili();
+  updateNavbar();
   if (navigation.current) return;
   const current = ++generation;
   for (const button of buttons) {
