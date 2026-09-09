@@ -6,10 +6,17 @@ import vm from "node:vm";
 // 预览真实发布产物；代理只使用独立内存，不导入 Enhanced 业务代码。
 // Preview the real deployment artifacts with isolated storage, without importing Enhanced business code.
 const publicDir = path.resolve(import.meta.dirname, "../docs/public");
+// override 仅从开发检出读取，正式构建从不加载测试资源。
+// Overrides read only from development checkouts; production builds never load fixtures.
+const overrides = process.argv.includes("--override-official") ? await (await import(path.resolve(import.meta.dirname, "../../../NSNanoCat/PreferencePanes/examples/official-overrides.mjs"))).loadOfficialOverrides() : null;
 const store = new Map();
 const server = http.createServer(async (request, reply) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
+    const fixture = overrides?.asset(url.pathname);
+    if (fixture && ["GET", "HEAD"].includes(request.method)) {
+      reply.writeHead(200, { "Content-Type": "text/css", "Cache-Control": "no-store" }); reply.end(request.method === "HEAD" ? "" : fixture); return;
+    }
     if (url.pathname === "/") { reply.writeHead(302, { Location: "/settings/" }); reply.end(); return; }
     const config = /^\/configs\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname);
     const common = /^\/api\//.test(url.pathname) || /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.test(url.pathname) || url.pathname === "/settings/assets/app.mjs";
@@ -32,6 +39,7 @@ const server = http.createServer(async (request, reply) => {
         $request: { url: url.href, method: request.method, headers: request.headers, body },
         $done: value => resolve(value.response), console, setTimeout, clearTimeout,
       }));
+      if (overrides && result && url.pathname.startsWith("/settings/")) result.body = overrides.rewrite(result.body);
       reply.writeHead(result?.status ?? 404, result?.headers); reply.end(result?.body); return;
     }
     if (!url.pathname.startsWith("/settings/") || !["GET", "HEAD"].includes(request.method)) { reply.writeHead(404); reply.end(); return; }
@@ -40,7 +48,8 @@ const server = http.createServer(async (request, reply) => {
     try {
       const body = await readFile(target);
       const mime = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json", ".png": "image/png" }[path.extname(target)] ?? "text/plain";
-      reply.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-store" }); reply.end(request.method === "HEAD" ? undefined : body);
+      const output = overrides && mime.startsWith("text/") ? overrides.rewrite(body.toString()) : body;
+      reply.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-store" }); reply.end(request.method === "HEAD" ? undefined : output);
     } catch (error) {
       if (!["ENOENT", "ENOTDIR"].includes(error.code)) throw error;
       reply.writeHead(404); reply.end();

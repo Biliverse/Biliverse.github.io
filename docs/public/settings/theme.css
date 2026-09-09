@@ -1,4 +1,4 @@
-@import url("https://biliverse.github.io/settings/official/theme.min.css?v=4.0.1");
+@import url("https://hilo.bilibili.com/h5_common/theme.min.css");
 
 /* 首页与模块页共用 Biliverse 品牌色，模块页通过 CSS 输入加载。
  * Share the Biliverse accent between the landing page and CSS-imported module pages. */

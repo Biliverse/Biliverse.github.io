@@ -1,14 +1,12 @@
 # 入口位置与客服中心样式调查
 
-## 2026-09-10：原版设置样式及页面内导出
+## 2026-09-10：正式环境只使用官方内置资源地址
 
-按用户提供的“从电脑上的 App 取文件”方案，PreferencePanes 0.9.0 使用本机国际版 6.4.0/91000200 内置的 b-style 4.0.1 和 AppSettings 1.1.2 原版 CSS。文件原文及 SHA-256 保存在包的 `src/browser/vendor`，不复制业务 JavaScript；通用控件只适配原版 CSS 的 DOM 类名和固定作用域标记。原手写开关、设置行、输入框外观和颜色表已删除。默认样式放在 CSS layer 内，项目 CSS 保持覆盖能力。
+按用户修正，0.9.1 不再把 App 内置 CSS 打包进面板脚本，也不在网站/npm/Release 提供镜像或样式 ZIP。正式页面通过 CSS import 引用官方 Hilo 地址；模块中自有页面的 Mock 也只引用官方 URL，不拦截或代替 Hilo 资源。SDK 继续使用 s1.hdslb.com 官方地址。
 
-网站提供 `settings/official/` 原文件镜像和 `settings/official-styles.zip` 下载包，明确属于官方文件镜像，不是官方公网 CDN。无需手机连接电脑即可下载。JSBridge SDK 仍直接引用 s1.hdslb.com 官方地址。
+本机 App 提取的文件仅放在 PreferencePanes 的 test/fixtures/official-styles，使用 --override-official 显式开启本地预览 override；不带参数时不启用，构建和发布不读取 fixtures。普通公网浏览器无法加载 App 内置资源时不提供兜底，这符合仅要求 App 内正常工作的目标。
 
-主题和键盘接收官方 SDK 事件；清空缓存和重置通过 `ability.alert` 原生确认，参数由本机原生实现核实。搜索使用官方 VField 外观，本地过滤已读取的 BoxJS 字段。
-
-导航按钮仍需核对目标容器。已从本机 Swift 字段元数据取得 CommonButton 的 id/type/content/url/badge/menu/visible，以及按钮点击结果 id；尚未确认可覆盖居中 logo＋标题和当前返回行为，因此未删除现有公共导航。页面内“复制客户端能力”只导出 SDK 版本及 V1/V2 方法清单，不读取用户资料和持久化配置。
+客户端能力复制入口保留，它只导出 SDK 版本与 V1/V2 方法清单，不导出 App 内置资源或持久化数据。之前 0.9.0 的公开镜像方案已撤销。
 
 ## 2026-09-09：官方域名下的本机 Mock 入口
 

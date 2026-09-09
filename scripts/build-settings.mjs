@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { rollup } from "rollup";
@@ -35,12 +35,6 @@ try {
   const { output } = await bundle.generate({ format: "iife" });
   outputs.set("settings/mock.js", output[0].code);
 } finally { await bundle.close(); }
-// 原版文件单独提供镜像和下载包，不加入页面 Mock 的运行时资源集合。
-// Mirror and archive original files separately from the runtime page Mock resource set.
-const provenanceURL = new URL(import.meta.resolve("@nsnanocat/preference-panes/styles/provenance.json"));
-const provenance = JSON.parse(await readFile(provenanceURL, "utf8"));
-const originals = ["provenance.json", ...provenance.files.map(item => item.file)];
-for (const name of originals) outputs.set(`settings/official/${name}`, await readFile(new URL(name, provenanceURL)));
 for (const [name, body] of outputs) {
   const target = path.join(root, stamp ? "doc_build" : "docs/public", name);
   if (check) {
@@ -49,14 +43,5 @@ for (const [name, body] of outputs) {
     await mkdir(path.dirname(target), { recursive: true });
     await writeFile(target, body);
   }
-}
-const archive = path.join(root, stamp ? "doc_build" : "docs/public", "settings/official-styles.zip");
-if (check) {
-  for (const name of originals) {
-    if (!execFileSync("unzip", ["-p", archive, name]).equals(outputs.get(`settings/official/${name}`))) throw new Error(`Stale official style archive: ${name}`);
-  }
-} else {
-  await rm(archive, { force: true });
-  execFileSync("zip", ["-q", "-X", "-j", archive, ...originals.map(name => path.join(root, stamp ? "doc_build" : "docs/public", "settings/official", name))]);
 }
 console.log(JSON.stringify({ outputs: outputs.size, check }));
