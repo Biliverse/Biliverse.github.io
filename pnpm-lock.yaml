@@ -12,8 +12,8 @@ importers:
         specifier: ^2.4.6
         version: 2.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@nsnanocat/preference-panes':
-        specifier: ^0.7.2
-        version: 0.7.2
+        specifier: ^0.8.0
+        version: 0.8.0
       '@rspress/core':
         specifier: ^2.0.18
         version: 2.0.18(@rspack/core@2.1.5(@swc/helpers@0.5.23))(@types/mdast@4.0.4)(@types/react@18.3.13)(core-js@3.39.0)(micromark-util-types@2.0.2)(micromark@4.0.2)
@@ -136,8 +136,8 @@ packages:
       react: '>=18.3.1 <20'
       react-dom: '>=18.3.1 <20'
 
-  '@nsnanocat/preference-panes@0.7.2':
-    resolution: {integrity: sha512-btynuaBiBJ7QJuwtsEDQVEa/SpnxAykL3LvBmDeHOKXHbutKy9K0gDayE7zr2MevcbTV8UtYfUblvQjMUBXBDw==, tarball: https://npm.pkg.github.com/download/@nsnanocat/preference-panes/0.7.2/82a73555e39eca45bb9c3d17ad0d310589827d38}
+  '@nsnanocat/preference-panes@0.8.0':
+    resolution: {integrity: sha512-JxgdsR4jklrlYaIfnrQZw8HCwWKqGKNvOa0lYCxqxDzToUGIZMLqopRSCKb86Z1Dbuv20OdffjQw9RHcXZPKGw==, tarball: https://npm.pkg.github.com/download/@nsnanocat/preference-panes/0.8.0/520324c1fa2b0447b3249f3a4a41a285c6787f6f}
 
   '@parcel/watcher-android-arm64@2.6.0':
     resolution: {integrity: sha512-trgpLSCKRC/huFjXX/Smh+0sWe4+YtKfktIToiMl59ghz7z+qkH6kMvNnUbLyRs9N11t8l4svSCs1+5B3rOAhA==}
@@ -1462,7 +1462,7 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  '@nsnanocat/preference-panes@0.7.2': {}
+  '@nsnanocat/preference-panes@0.8.0': {}
 
   '@parcel/watcher-android-arm64@2.6.0':
     optional: true

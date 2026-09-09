@@ -11,7 +11,7 @@ function pageInputs(url, headers = {}) {
     const module = match[1];
     const values = Object.fromEntries(Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]));
     const json = values["x-preferencepanes-json"] ?? url.searchParams.get("json") ?? `/configs/${module}`;
-    const css = values["x-preferencepanes-css"] ?? url.searchParams.get("css") ?? `/settings/assets/${module}.css`;
+    const css = values["x-preferencepanes-css"] ?? url.searchParams.get("css") ?? "";
     if (!json.trim()) throw new TypeError("JSON resource URL is required");
     return { url: url.href, module, json, css };
 }

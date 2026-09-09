@@ -11,7 +11,7 @@
 - 配置 Mock：从同版业务仓库的 Gist/Release 取得 BoxJS JSON，非原生 Mock 平台使用同版纯配置响应脚本。
 - 通用 API：引用 https://github.com/NSNanoCat/PreferencePanes/releases/latest/download/api.js，提供设置文档、渲染资源及无鉴权 form 存储 API。
 
-移除旧的独立 PreferencePanes 模块，安装更新后的业务模块即可。发布顺序为 PreferencePanes API Release → 业务模块模板 → 本站清理。当前开发版将存储请求改为 POST /api/get、set、delete；必须先发布新 API，不能将未发布的 latest 地址当作可用资源。
+移除旧的独立 PreferencePanes 模块，安装更新后的业务模块即可。Enhanced、Global、Redirect、ADBlock 的接入模板均包含配置 Mock 和通用 API。PreferencePanes 0.8.0 将存储请求改为 POST /api/get、set、delete；发布顺序为 API Release → 业务模块模板 → 本站清理。
 
 网站不持有模块字段或默认值。前端从 BoxJS 完整 ID 生成 form 字段名 @root.path，API 使用 util 读写，不重复下载 BoxJS，也不做鉴权或枚举校验。业务脚本选择 PersistentStore 后使用这些设置。
 

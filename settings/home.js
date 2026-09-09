@@ -1,4 +1,4 @@
-import { Navigation, ModuleFrame } from "/settings/assets/navigation.mjs?v=0.7.2";
+import { Navigation, ModuleFrame } from "/settings/assets/navigation.mjs?v=0.8.0";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
