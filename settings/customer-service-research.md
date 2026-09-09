@@ -1,5 +1,15 @@
 # 入口位置与客服中心样式调查
 
+## 2026-09-10：当前容器能力回读与原生 Toast
+
+用户从当前容器导出的 SDK 3.3.5 清单确认：V1 有 biliapp.showToast / biliapp.startPicker，V2 有 ui.setNavigationButton / updateNavigationButton / observeNavigationClick / setNavigationColor / setNavigationHide，以及 system.showDatePicker。
+
+本机 BBPhoneAppJSBridge 的 showToast 实现（0x110461110）读取 title；因此网站通过官方 SDK callNative({method:"biliapp.showToast",data:{title}}) 提示保存结果，不等待该方法未提供的回调。模块通过通用 notice 事件交由宿主显示，App 接管时不创建网页 Toast、不启动其计时器。普通独立宿主仍可使用通用通知。
+
+startPicker（0x110460d5c）读取 mode/ratiox/ratioy/maxsize，返回 data:image/ipeg;base64 图片内容；它不是设置选项选择器。日期选择器也不替代分类单选或二级多选。
+
+Swift 字段元数据确认导航按钮为 {id,type,content?,url?,badge?,menu?,visible?}，menu.content 是 {id,text} 数组；按钮点击返回 id。CommonButtonType 的 RawRepresentable 实现（0x104c307e0/0x104c307fc）以 0..6 映射 text/icon/share/more/help/notice/calendar，“更多”为整数 3。当前已验证的标题模型仅有 title 字符串，原生接口尚不能表达现有居中 logo＋标题约定；保留现有导航，待确认这一界面取舍后再替换。
+
 ## 2026-09-10：正式环境只使用官方内置资源地址
 
 按用户修正，0.9.1 不再把 App 内置 CSS 打包进面板脚本，也不在网站/npm/Release 提供镜像或样式 ZIP。正式页面通过 CSS import 引用官方 Hilo 地址；模块中自有页面的 Mock 也只引用官方 URL，不拦截或代替 Hilo 资源。SDK 继续使用 s1.hdslb.com 官方地址。
