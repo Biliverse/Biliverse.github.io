@@ -6,7 +6,22 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import vm from "node:vm";
-import { inBilibili, closeBilibili, observeAppearance } from "./bilibili.mjs";
+import { inBilibili, closeBilibili, observeAppearance, confirmBilibili } from "./bilibili.mjs";
+
+test("native confirmations use validated button fields and wait for a user decision", async () => {
+  let call;
+  const host = { biliBridge: { initPromise: Promise.resolve(), isSupport: async () => true, callNative: value => { call = value; } } };
+  const pending = confirmBilibili("Clear?", host);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(call.data, { type: "confirm", title: "Biliverse", message: "Clear?", confirmButton: "确定", cancelButton: "取消" });
+  call.callback("ok");
+  call.onCancel();
+  assert.equal(await pending, false);
+  const confirmed = confirmBilibili("Reset?", host);
+  await new Promise(resolve => setImmediate(resolve));
+  call.onConfirm();
+  assert.equal(await confirmed, true);
+});
 
 test("official appearance callbacks drive live theme and keyboard changes", async () => {
   const subscriptions = new Map(), themes = [], heights = [];

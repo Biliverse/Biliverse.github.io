@@ -29,6 +29,25 @@ export async function observeAppearance(callbacks, host = window) {
 }
 
 /**
+ * 使用官方原生确认框；普通网页由 PreferencePanes 使用浏览器对话框。
+ * Use the official native confirmation dialog; PreferencePanes handles standalone browser dialogs.
+ * @param {string} message 确认内容 / Confirmation message.
+ * @param {Window} [host] 宿主窗口 / Host window.
+ * @returns {Promise<boolean>} 用户是否确认 / Whether the user confirmed.
+ */
+export async function confirmBilibili(message, host = window) {
+  const bridge = host.biliBridge;
+  await bridge.initPromise;
+  if (!(await bridge.isSupport("ability.alert"))) throw new Error("客户端不支持原生确认框");
+  return new Promise((resolve, reject) => bridge.callNative({
+    method: "ability.alert",
+    data: { type: "confirm", title: "Biliverse", message, confirmButton: "确定", cancelButton: "取消" },
+    onConfirm: () => resolve(true), onCancel: () => resolve(false), onNeutral: () => resolve(false),
+    callback: result => { if (result instanceof Error || result === "error") reject(new Error("客户端确认框调用失败")); },
+  }));
+}
+
+/**
  * 沿用游戏中心的能力查询及关闭流程，由官方 SDK 管理原生传输和初始化。
  * Follow the game center's capability check and close flow; the official SDK owns transport and initialization.
  * @param {Window} [host] 宿主窗口 / Host window.

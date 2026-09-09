@@ -1,5 +1,5 @@
 import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.8.1";
-import { inBilibili, closeBilibili, observeAppearance } from "./bilibili.mjs?v=appearance-1";
+import { inBilibili, closeBilibili, observeAppearance, confirmBilibili } from "./bilibili.mjs?v=native-dialog-1";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -42,6 +42,10 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
     "X-PreferencePanes-CSS": "/settings/theme.css",
   } });
   moduleFrame = frame;
+  if (inBilibili()) frame.addEventListener("confirm", event => {
+    event.preventDefault();
+    confirmBilibili(event.detail.message).then(event.detail.resolve, event.detail.reject);
+  });
   frame.addEventListener("change", () => {
     updateNavbar();
   });
