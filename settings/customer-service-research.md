@@ -1,10 +1,22 @@
 # 入口位置与客服中心样式调查
 
-## 2026-09-09：全屏与退出补充
+## 2026-09-09：游戏中心返回行为复核
+
+Apifox 客户端快捷请求实际取得 [游戏中心 HTML](https://app.biligame.com/) 与它引用的 [gamecenter-h5 脚本](https://s1.hdslb.com/bfs/static/gameweb/gamecenter-h5/gamecenter-h5.bc85b1e3aadf770e3c47.js)，均为 HTTP 200。Apifox 项目接口列表只有最近游玩记录，没有游戏中心网页定义，因此使用快捷请求读取公开页面，未修改现有接口。
+
+游戏中心的 `goBack` 判断 `curPageIndex <= 1 && checkBiliApp()`：最外层调用 `closeWebview()`，其余页面调用 Vue Router 的 `back()`。单独的 `closeBrowser` 操作也直接关闭 WebView。`closeWebview` 先 `isSupport("global.closeBrowser")`，支持时通过 `biliBridge.callNative({method:"global.closeBrowser"})` 调用；不支持时调用旧客户端的 `biliapp.closeBrowser()`。
+
+原 Biliverse 页面未加载官方 SDK，直接发送 V2 消息，也没有进行能力查询。官方 `useNative` 是 V2 API，而游戏中心的 `isSupport` / `callNative` 使用旧通道；同名方法并不意味着两条通道都支持。之前仅验证消息形状的测试无法证明退出有效。
+
+现在首页直接引用 [官方 JSBridge SDK](https://s1.hdslb.com/bfs/seed/jinkela/short/jsb/js-bridge.min.js)（本次取得 3.3.5），由 SDK 处理初始化、回调与 iOS/Android 编码。根页面按游戏中心的查询与调用方式退出，子页面仍由 ModuleFrame 返回。等待 SDK 初始化后，若无旧通道则跳过该通道的能力查询，避免旧 `biliapp` 容器等待不存在的回调；没有可用退出接口时显示错误。
+
+验证使用实际下载的官方 SDK，在 iOS WKWebView 对象消息与 Android 字符串消息两种宿主模型中执行，模拟旧通道支持关闭、V2 不支持关闭，确认依次发送能力查询和关闭请求。Apifox 不运行 Bilibili 原生 WebView，这些证据不能代替真机退出验证。该修复只部署网站，无需发布 PreferencePanes 或更新业务模块。
+
+## 2026-09-09：首次全屏调查记录
 
 当前 App 入口数据的游戏中心是 `bilibili://game_center/user?sourceFrom=100003`，属于原生路由。数据库中的旧 H5 游戏地址已返回 404。App 二进制和其它现用 H5 地址均包含 `navhide=1`；Biliverse 入口使用此参数关闭原生导航，保留网页常驻顶栏。
 
-本机官方 App 内置 `message-settings-CDqsRNlJ.js` 调用 `biliBridge.useNative("global.closeBrowser")` 关闭页面；`svgs-D7nnNgVc.js` 内 JSBridge 3.3.5 的 V2 传输使用 biliInjectV2.postMessage(JSON.stringify({method,data,callbackId}))。网站复用这两种现有桥接入口，只在项目主页调用退出；模块和二级页仍先沿共同历史返回。普通浏览器使用 history.back。自动测试验证调用协议，原生容器最终效果仍需真机复测。
+首次调查在本机官方 App 内置 `message-settings-CDqsRNlJ.js` 找到 `biliBridge.useNative("global.closeBrowser")`，并参考 `svgs-D7nnNgVc.js` 的 V2 消息编码。用户随后确认主页没有退出效果；该实现已被上面的游戏中心 SDK 接入替代，不再手工发送 V2 消息。
 
 日期：2026-09-06。三个变更分别提交：入口上移、入口简称、客服中心样式。
 
