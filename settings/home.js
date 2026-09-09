@@ -1,5 +1,5 @@
-import { Navigation, ModuleFrame, ModuleStatus } from "/settings/assets/navigation.mjs?v=0.9.3";
-import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs?v=0.9.3";
+import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.3";
+import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs?v=menu-capability-1";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -41,6 +41,9 @@ const statuses = buttons.map(button => {
   return { button, status };
 });
 let moduleFrame;
+const menuHost = document.querySelector("#module-actions");
+const menu = new ActionMenu(id => moduleFrame.perform(id));
+menuHost.append(menu.element);
 const nativeNavigation = inBilibili() ? new NativeNavigation(id => moduleFrame.perform(id), reportNavigationError) : null;
 window.addEventListener("pagehide", event => { if (!event.persisted) nativeNavigation?.destroy(); });
 const navigation = new Navigation(document.querySelector("#pages"), home, (module, signal) => {
@@ -84,7 +87,9 @@ for (const button of buttons) button.onclick = () => navigation.open(button.data
 function updateNavbar() {
   const state = navigation.current ? moduleFrame.state : { title: "Biliverse", actions: [], busy: false };
   document.title = state.title;
-  nativeNavigation?.update(state).catch(reportNavigationError);
+  menu.update(state.actions, state.busy);
+  menuHost.hidden = !navigation.current || !state.actions.length || Boolean(nativeNavigation?.menuSupported);
+  nativeNavigation?.update(state).then(() => { menuHost.hidden = !navigation.current || !moduleFrame.state.actions.length || nativeNavigation.menuSupported; }, reportNavigationError);
 }
 
 /**
@@ -96,7 +101,7 @@ function updateNavbar() {
 function reportNavigationError(error) {
   console.error(error);
   const message = document.querySelector("#navigation-error");
-  message.textContent = `原生导航不可用：${error.message}`;
+  message.textContent = `原生菜单调用失败：${error.message}`;
   message.hidden = false;
 }
 

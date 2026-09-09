@@ -131,12 +131,22 @@ export class NativeNavigation {
     if (this.#destroyed) return;
     this.#bridge.callNative({ method: "ui.showNavigation" });
     this.#bridge.callNative({ method: "ui.setTitle", data: { title: "Biliverse" } });
+    // V2 UI 方法还要求 common 容器；方法清单不等同于当前容器可调用。
+    // V2 UI methods also require a common container; the method list alone is insufficient.
+    if (!this.#bridge.isWbTypeCommon) return;
     const supported = await Promise.all(["ui.setNavigationButton", "ui.observeNavigationClick"].map(method => this.#bridge.canIUse(method)));
-    if (!supported.every(Boolean)) throw new Error("客户端不支持原生导航菜单");
+    if (!supported.every(Boolean)) return;
     if (this.#destroyed) return;
     this.#bridge.addChannel("ui.observeNavigationClick", this.#click);
     this.#subscribed = true;
   }
+
+  /**
+   * 当前容器是否可用原生菜单；不影响原生标题和返回。
+   * Whether native menus are available, independently of native titles and back navigation.
+   * @returns {boolean} 菜单能力 / Menu capability.
+   */
+  get menuSupported() { return this.#subscribed; }
 
   /**
    * 串行同步标题和菜单，跳过尚未发送的过期状态。
@@ -151,6 +161,7 @@ export class NativeNavigation {
       await this.#ready;
       if (this.#destroyed || revision !== this.#revision) return;
       this.#bridge.callNative({ method: "ui.setTitle", data: { title: state.title } });
+      if (!this.#subscribed) return;
       const buttons = !state.busy && state.actions.length ? [{ id: "biliverse.more", type: 3, menu: { content: state.actions.map(action => ({ id: action.id, text: action.label })) }, visible: true }] : [];
       await this.#bridge.useNative("ui.setNavigationButton", { buttons });
     };

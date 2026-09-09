@@ -96,7 +96,7 @@ test("native navigation uses official titles and built-in more menus; only activ
   const calls = [], selected = [], errors = [];
   let listener, removed;
   const bridge = {
-    inBiliApp: true, initPromise: Promise.resolve(), canIUse: async () => true,
+    inBiliApp: true, isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
     callNative: request => calls.push(request),
     useNative: async (method, data) => calls.push({ method, data }),
     addChannel: (name, callback) => { assert.equal(name, "ui.observeNavigationClick"); listener = callback; },
@@ -132,7 +132,7 @@ test("native updates are serialized and superseded states are discarded", async 
   const calls = [];
   let complete;
   const bridge = {
-    initPromise: Promise.resolve(), canIUse: async () => true,
+    isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
     callNative() {}, addChannel() {}, removeChannel() {},
     useNative: (method, data) => { calls.push(data); return new Promise(resolve => { complete = resolve; }); },
   };
@@ -154,10 +154,13 @@ test("native updates are serialized and superseded states are discarded", async 
   assert.equal(calls.length, 2);
 });
 
-test("unsupported native menus surface failure without constructing a web navigation fallback", async () => {
-  const bridge = { initPromise: Promise.resolve(), canIUse: async () => false, callNative() {}, addChannel: assert.fail };
+test("legacy containers retain native titles without calling common-only menu methods", async () => {
+  const calls = [];
+  const bridge = { isWbTypeCommon: false, initPromise: Promise.resolve(), canIUse: assert.fail, useNative: assert.fail, callNative: request => calls.push(request), addChannel: assert.fail };
   const navigation = new NativeNavigation(assert.fail, assert.fail, { biliBridge: bridge });
-  await assert.rejects(navigation.update({ title: "Biliverse", actions: [], busy: false }), /不支持原生导航菜单/);
+  await navigation.update({ title: "Enhanced", actions: [{id: "reset", label: "Reset"}], busy: false });
+  assert.equal(navigation.menuSupported, false);
+  assert.deepEqual(calls.at(-1), { method: "ui.setTitle", data: { title: "Enhanced" } });
   navigation.destroy();
 });
 
@@ -215,7 +218,7 @@ test("website deploys only generic frontend assets and owns the custom landing p
   assert.match(html, /class="brand-logo"/);
   for (const file of ["home.css", "theme.css"]) assert.ok(html.includes(`href="https://biliverse.github.io/settings/${file}?`));
   assert.ok(script.includes('"X-PreferencePanes-CSS": "https://biliverse.github.io/settings/theme.css?'));
-  assert.doesNotMatch(html + script, /app-navbar|homeBack|ActionMenu|IntersectionObserver|closeBilibili/);
+  assert.doesNotMatch(html + script, /app-navbar|homeBack|IntersectionObserver|closeBilibili/);
   assert.doesNotMatch(script, /\/api\/|mount\(|srcdoc|DOMParser|\.replace\(|pushState|\.animate\(/);
   assert.match(script, /new ModuleStatus/);
   assert.match(script, /ModuleFrame/);
