@@ -12,8 +12,8 @@ importers:
         specifier: ^2.4.6
         version: 2.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@nsnanocat/preference-panes':
-        specifier: ^0.9.2
-        version: 0.9.2
+        specifier: ^0.9.3
+        version: 0.9.3
       '@rspress/core':
         specifier: ^2.0.18
         version: 2.0.18(@rspack/core@2.1.5(@swc/helpers@0.5.23))(@types/mdast@4.0.4)(@types/react@18.3.13)(core-js@3.39.0)(micromark-util-types@2.0.2)(micromark@4.0.2)
@@ -151,8 +151,8 @@ packages:
       react: '>=18.3.1 <20'
       react-dom: '>=18.3.1 <20'
 
-  '@nsnanocat/preference-panes@0.9.2':
-    resolution: {integrity: sha512-xgTccUfGxgpoa5mk9raZvkAHRxBAfzt1Q1kNhlPEc040UxzPhAU9lZ2vktAz9dkRPcy0sbs4iDQUEjzImAAf7Q==, tarball: https://npm.pkg.github.com/download/@nsnanocat/preference-panes/0.9.2/34e3c6f7d0987ef16566ee171718db0c5ee903a1}
+  '@nsnanocat/preference-panes@0.9.3':
+    resolution: {integrity: sha512-S23Sev3Bdt+nkaftqSlXrCNIECig959u7ES6SgDcPZxesU8dhVZxOACJHGYJ3XH1V1q1F7Sq9n82pWEvb4WoEg==, tarball: https://npm.pkg.github.com/download/@nsnanocat/preference-panes/0.9.3/5d0ee3cacb4f8698ba52cf8d93d93b05d9ffe2a5}
 
   '@nsnanocat/util@2.7.4':
     resolution: {integrity: sha512-0/n18zctviHLiujU6N4+ILobcoLg+N1c0TVso+pb78P1HM1hcaYnt41qbmvtQgy7UD+fapAQwgJk/Gu0Z3uRIA==, tarball: https://npm.pkg.github.com/download/@nsnanocat/util/2.7.4/d29eba0f31acd5f9426802ab48cd86b5cda9bd93}
@@ -1714,7 +1714,7 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  '@nsnanocat/preference-panes@0.9.2': {}
+  '@nsnanocat/preference-panes@0.9.3': {}
 
   '@nsnanocat/util@2.7.4':
     dependencies:

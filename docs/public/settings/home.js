@@ -1,5 +1,5 @@
-import { Navigation, ModuleFrame, ModuleStatus } from "/settings/assets/navigation.mjs?v=0.9.2";
-import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs?v=native-navigation-1";
+import { Navigation, ModuleFrame, ModuleStatus } from "/settings/assets/navigation.mjs?v=0.9.3";
+import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs?v=0.9.3";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -44,7 +44,7 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   status.textContent = "正在打开设置…";
   const frame = new ModuleFrame(button.dataset.page, { signal, headers: {
     "X-PreferencePanes-JSON": `/configs/${module}`,
-    "X-PreferencePanes-CSS": "/settings/theme.css?v=0.9.1",
+    "X-PreferencePanes-CSS": "/settings/theme.css?v=0.9.3",
   } });
   moduleFrame = frame;
   if (inBilibili()) frame.addEventListener("confirm", event => {
