@@ -4,7 +4,7 @@
   "scripts": {
     "preinstall": "npx -y only-allow pnpm",
     "dev": "rspress dev",
-    "build": "rspress build",
+    "build": "rspress build && node scripts/build-settings.mjs --stamp",
     "preview": "rspress preview",
     "settings:build": "node scripts/build-settings.mjs",
     "settings:check": "node scripts/build-settings.mjs --check",
