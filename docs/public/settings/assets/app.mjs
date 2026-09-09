@@ -104,6 +104,24 @@ function metadata(source) {
 }
 
 /**
+ * 统一解析模块页的资源地址：Header 优先于查询参数，再使用模块约定。
+ * Resolve module resource locations: headers override query parameters and module conventions.
+ * @param {URL} url 已解析的页面请求地址 / Parsed page request URL.
+ * @param {Record<string, string | undefined>} [headers] 请求头，名称不区分大小写 / Case-insensitive request headers.
+ * @returns {{url: string, module: string, json: string, css: string}} 页面上下文与两个资源输入 / Page context and two resource inputs.
+ */
+function pageInputs(url, headers = {}) {
+    const match = /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname);
+    if (!match) throw new TypeError("Open a concrete module URL");
+    const module = match[1];
+    const values = Object.fromEntries(Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]));
+    const json = values["x-preferencepanes-json"] ?? url.searchParams.get("json") ?? `/configs/${module}`;
+    const css = values["x-preferencepanes-css"] ?? url.searchParams.get("css") ?? `/settings/assets/${module}.css`;
+    if (!json.trim()) throw new TypeError("JSON resource URL is required");
+    return { url: url.href, module, json, css };
+}
+
+/**
  * 创建元素，所有展示文本通过 textContent 写入。
  * Create elements and assign display text through textContent only.
  * @template {keyof HTMLElementTagNameMap} T
@@ -126,7 +144,7 @@ function element(tag, className, text) {
  * @returns {string} 完整地址 / Absolute address.
  */
 function resourceURL(value) {
-    const url = new URL(value, location.href);
+    const url = new URL(value, document.baseURI);
     if (!["http:", "https:"].includes(url.protocol)) throw new TypeError("Metadata URLs must use HTTP(S)");
     return url.href;
 }
@@ -163,7 +181,7 @@ function errorView(error, retry) {
     return view;
 }
 
-var defaults = "/* 分组列表沿用 Bilibili 设置页的行结构，样式限定在面板内。\n * Grouped rows follow the Bilibili settings layout, scoped to the panel. */\n.pp-panel {\n    --pp-text: #18191c;\n    --pp-background: #f6f7f8;\n    --pp-surface: #fff;\n    --pp-border: #e3e5e7;\n    --pp-muted: #9499a0;\n    --pp-accent: #fb7299;\n    font:\n        15px / 1.5 -apple-system,\n        BlinkMacSystemFont,\n        \"Segoe UI\",\n        sans-serif;\n    color: var(--pp-text);\n    background: var(--pp-background);\n    position: relative;\n    min-height: 100vh;\n}\n.pp-panel * {\n    box-sizing: border-box;\n    letter-spacing: 0;\n}\n.pp-header {\n    height: calc(52px + env(safe-area-inset-top));\n    padding: env(safe-area-inset-top) 12px 0;\n    display: flex;\n    align-items: center;\n    background: var(--pp-surface);\n    border-bottom: 1px solid var(--pp-border);\n    position: relative;\n}\n.pp-title {\n    font-size: 17px;\n    font-weight: 500;\n    margin: 0;\n    min-width: 0;\n    overflow-wrap: anywhere;\n}\n.pp-header .pp-title {\n    flex: 1;\n    text-align: center;\n}\n.pp-nav-spacer {\n    width: 44px;\n    flex: none;\n}\n.pp-panel button {\n    font: inherit;\n    cursor: pointer;\n    border: 0;\n    background: none;\n    color: inherit;\n}\n.pp-panel .pp-back {\n    width: 44px;\n    height: 44px;\n    flex: none;\n    font-size: 34px;\n    line-height: 32px;\n    padding: 0;\n}\n.pp-panel button:disabled {\n    opacity: 0.5;\n    cursor: wait;\n}\n.pp-viewport {\n    position: relative;\n    height: calc(100vh - 52px - env(safe-area-inset-top));\n    overflow: hidden;\n}\n@supports (height: 100dvh) {\n    .pp-viewport {\n        height: calc(100dvh - 52px - env(safe-area-inset-top));\n    }\n}\n.pp-fields,\n.pp-choice-page {\n    position: absolute;\n    inset: 0;\n    overflow: auto;\n    padding: 12px max(16px, calc((100% - 688px) / 2)) calc(28px + env(safe-area-inset-bottom));\n    background: var(--pp-background);\n}\n.pp-panel .form-group {\n    margin: 0 0 12px;\n}\n.pp-panel .form-group__title {\n    font-size: 12px;\n    line-height: 17px;\n    font-weight: 400;\n    color: var(--pp-muted);\n    padding-left: 12px;\n    margin: 12px 0 6px;\n}\n.pp-panel .form-group__row {\n    border-radius: 8px;\n    overflow: hidden;\n    background: var(--pp-surface);\n}\n.pp-panel .form-row {\n    position: relative;\n    display: flex;\n    align-items: center;\n    width: 100%;\n    min-height: 46px;\n    padding: 12px;\n    border: 0;\n    border-bottom: 1px solid var(--pp-border);\n    background: var(--pp-surface);\n    gap: 12px;\n}\n.pp-panel .form-row:last-child {\n    border-bottom: 0;\n}\n.pp-panel .form-row__text {\n    flex: 1;\n    min-width: 0;\n    margin: 0;\n    display: flex;\n    flex-direction: column;\n}\n.pp-panel .form-row__title {\n    font-size: 15px;\n    line-height: 22px;\n    color: var(--pp-text);\n    text-align: left;\n}\n.pp-panel .form-row__subtitle {\n    font-size: 12px;\n    line-height: 18px;\n    color: var(--pp-muted);\n    overflow-wrap: anywhere;\n    margin-top: 2px;\n}\n.pp-choice-link {\n    display: flex;\n    align-items: center;\n    justify-content: flex-end;\n    gap: 8px;\n    max-width: 45%;\n    min-width: 44px;\n    min-height: 44px;\n    padding: 0;\n    text-align: right;\n    flex: 1;\n}\n.pp-summary {\n    color: var(--pp-muted);\n    font-size: 13px;\n    line-height: 18px;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n    overflow-wrap: anywhere;\n}\n.pp-chevron {\n    color: var(--pp-muted);\n    font-size: 22px;\n    flex: none;\n}\n.pp-input {\n    font: inherit;\n    color: var(--pp-text);\n    background: var(--pp-surface);\n    border: 1px solid var(--pp-border);\n    border-radius: 6px;\n    padding: 8px;\n    min-width: 0;\n    max-width: 45%;\n    width: 45%;\n}\nselect.pp-input {\n    text-overflow: ellipsis;\n    font-size: 13px;\n}\n.pp-panel .pp-multiline {\n    display: block;\n}\n.pp-multiline .pp-input {\n    max-width: 100%;\n    width: 100%;\n    margin-top: 10px;\n}\n.pp-switch {\n    appearance: none;\n    -webkit-appearance: none;\n    position: relative;\n    flex: none;\n    width: 32px;\n    height: 20px;\n    max-width: none;\n    border: 0;\n    border-radius: 15px;\n    padding: 0;\n    background: #c9ccd0;\n    cursor: pointer;\n    transition: background 0.2s;\n}\n.pp-switch::before {\n    content: \"\";\n    position: absolute;\n    top: 3px;\n    left: 3px;\n    width: 14px;\n    height: 14px;\n    border-radius: 50%;\n    background: white;\n    transition: transform 0.2s;\n}\n.pp-switch:checked {\n    background: var(--pp-accent);\n}\n.pp-switch:checked::before {\n    transform: translateX(12px);\n}\n.pp-choice {\n    justify-content: space-between;\n    cursor: pointer;\n}\n.pp-choice input {\n    width: 20px;\n    height: 20px;\n    flex: none;\n    accent-color: var(--pp-accent);\n    margin: 0;\n}\n.pp-description {\n    font-size: 12px;\n    line-height: 1.6;\n    color: var(--pp-muted);\n    white-space: pre-wrap;\n    overflow-wrap: anywhere;\n}\n.pp-module-info {\n    display: flex;\n    gap: 12px;\n    margin: 12px 0;\n}\n.pp-module-icon {\n    width: 48px;\n    height: 48px;\n    object-fit: contain;\n    flex: none;\n}\n.pp-module-details {\n    min-width: 0;\n    overflow-wrap: anywhere;\n}\n.pp-module-source {\n    color: inherit;\n    text-decoration: underline;\n}\n.pp-maintenance {\n    margin-top: 24px;\n}\n.pp-actions {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 8px;\n}\n.pp-actions button,\n.pp-error button {\n    min-height: 44px;\n    padding: 8px 12px;\n    border-radius: 6px;\n    background: var(--pp-surface);\n}\n.pp-panel .pp-danger {\n    color: #e45656;\n}\n.pp-cache {\n    max-height: 320px;\n    overflow: auto;\n    white-space: pre-wrap;\n    overflow-wrap: anywhere;\n}\n.pp-toast {\n    pointer-events: none;\n    position: fixed;\n    bottom: calc(30px + env(safe-area-inset-bottom));\n    left: 50%;\n    transform: translateX(-50%);\n    max-width: 90vw;\n    padding: 10px 16px;\n    border-radius: 8px;\n    background: #333e;\n    color: white;\n    font-size: 13px;\n    z-index: 20;\n}\n.pp-toast[data-kind=\"error\"] {\n    background: #8d2424;\n}\n.pp-panel :focus-visible {\n    outline: 2px solid var(--pp-accent);\n    outline-offset: -2px;\n}\n@media (prefers-color-scheme: dark) {\n    .pp-panel {\n        --pp-text: #e3e5e7;\n        --pp-background: #17181a;\n        --pp-surface: #232427;\n        --pp-border: #343538;\n    }\n}\n:root[data-theme=\"dark\"] .pp-panel {\n    --pp-text: #e3e5e7;\n    --pp-background: #17181a;\n    --pp-surface: #232427;\n    --pp-border: #343538;\n}\n:root[data-theme=\"light\"] .pp-panel {\n    --pp-text: #18191c;\n    --pp-background: #f6f7f8;\n    --pp-surface: #fff;\n    --pp-border: #e3e5e7;\n}\n@media (prefers-reduced-motion: reduce) {\n    .pp-panel .pp-switch,\n    .pp-panel .pp-switch::before {\n        transition: none;\n    }\n}\n";
+var defaults = "/* 分组列表沿用 Bilibili 设置页的行结构，样式限定在面板内。\n * Grouped rows follow the Bilibili settings layout, scoped to the panel. */\n.pp-panel {\n    --pp-text: #18191c;\n    --pp-background: #f6f7f8;\n    --pp-surface: #fff;\n    --pp-border: #e3e5e7;\n    --pp-muted: #9499a0;\n    --pp-accent: #fb7299;\n    font:\n        15px / 1.5 -apple-system,\n        BlinkMacSystemFont,\n        \"Segoe UI\",\n        sans-serif;\n    color: var(--pp-text);\n    background: var(--pp-background);\n    position: relative;\n    min-height: 100vh;\n}\n.pp-panel * {\n    box-sizing: border-box;\n    letter-spacing: 0;\n}\n.pp-header {\n    height: calc(52px + env(safe-area-inset-top));\n    padding: env(safe-area-inset-top) 12px 0;\n    display: flex;\n    align-items: center;\n    background: var(--pp-surface);\n    border-bottom: 1px solid var(--pp-border);\n    position: sticky;\n    top: 0;\n    z-index: 1;\n}\n.pp-title {\n    font-size: 17px;\n    font-weight: 500;\n    margin: 0;\n    min-width: 0;\n    overflow-wrap: anywhere;\n}\n.pp-brand {\n    flex: 1;\n    min-width: 0;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    text-align: center;\n}\n.pp-brand-icon {\n    display: none;\n    flex: none;\n    width: 28px;\n    height: 28px;\n}\n.pp-brand-icon:not(:empty) {\n    display: block;\n}\n.pp-brand-icon img {\n    display: block;\n    width: 100%;\n    height: 100%;\n    object-fit: contain;\n}\n.pp-nav-spacer {\n    width: 44px;\n    flex: none;\n}\n.pp-panel button {\n    font: inherit;\n    cursor: pointer;\n    border: 0;\n    background: none;\n    color: inherit;\n}\n.pp-panel .pp-back {\n    width: 44px;\n    height: 44px;\n    flex: none;\n    font-size: 34px;\n    line-height: 32px;\n    padding: 0;\n}\n.pp-panel button:disabled {\n    opacity: 0.5;\n    cursor: wait;\n}\n.pp-viewport {\n    position: relative;\n    height: calc(100vh - 52px - env(safe-area-inset-top));\n    overflow: hidden;\n}\n@supports (height: 100dvh) {\n    .pp-viewport {\n        height: calc(100dvh - 52px - env(safe-area-inset-top));\n    }\n}\n.pp-fields,\n.pp-choice-page {\n    position: absolute;\n    inset: 0;\n    overflow: auto;\n    padding: 12px max(16px, calc((100% - 688px) / 2)) calc(28px + env(safe-area-inset-bottom));\n    background: var(--pp-background);\n}\n.pp-panel .form-group {\n    margin: 0 0 12px;\n}\n.pp-panel .form-group__title {\n    font-size: 12px;\n    line-height: 17px;\n    font-weight: 400;\n    color: var(--pp-muted);\n    padding-left: 12px;\n    margin: 12px 0 6px;\n}\n.pp-panel .form-group__row {\n    border-radius: 8px;\n    overflow: hidden;\n    background: var(--pp-surface);\n}\n.pp-panel .form-row {\n    position: relative;\n    display: flex;\n    align-items: center;\n    width: 100%;\n    min-height: 46px;\n    padding: 12px;\n    border: 0;\n    border-bottom: 1px solid var(--pp-border);\n    background: var(--pp-surface);\n    gap: 12px;\n}\n.pp-panel .form-row:last-child {\n    border-bottom: 0;\n}\n.pp-panel .form-row__text {\n    flex: 1;\n    min-width: 0;\n    margin: 0;\n    display: flex;\n    flex-direction: column;\n}\n.pp-panel .form-row__title {\n    font-size: 15px;\n    line-height: 22px;\n    color: var(--pp-text);\n    text-align: left;\n}\n.pp-panel .form-row__subtitle {\n    font-size: 12px;\n    line-height: 18px;\n    color: var(--pp-muted);\n    overflow-wrap: anywhere;\n    margin-top: 2px;\n}\n.pp-choice-link {\n    display: flex;\n    align-items: center;\n    justify-content: flex-end;\n    gap: 8px;\n    max-width: 45%;\n    min-width: 44px;\n    min-height: 44px;\n    padding: 0;\n    text-align: right;\n    flex: 1;\n}\n.pp-summary {\n    color: var(--pp-muted);\n    font-size: 13px;\n    line-height: 18px;\n    display: -webkit-box;\n    -webkit-line-clamp: 2;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n    overflow-wrap: anywhere;\n}\n.pp-chevron {\n    color: var(--pp-muted);\n    font-size: 22px;\n    flex: none;\n}\n.pp-input {\n    font: inherit;\n    color: var(--pp-text);\n    background: var(--pp-surface);\n    border: 1px solid var(--pp-border);\n    border-radius: 6px;\n    padding: 8px;\n    min-width: 0;\n    max-width: 45%;\n    width: 45%;\n}\nselect.pp-input {\n    text-overflow: ellipsis;\n    font-size: 13px;\n}\n.pp-panel .pp-multiline {\n    display: block;\n}\n.pp-multiline .pp-input {\n    max-width: 100%;\n    width: 100%;\n    margin-top: 10px;\n}\n.pp-switch {\n    appearance: none;\n    -webkit-appearance: none;\n    position: relative;\n    flex: none;\n    width: 32px;\n    height: 20px;\n    max-width: none;\n    border: 0;\n    border-radius: 15px;\n    padding: 0;\n    background: #c9ccd0;\n    cursor: pointer;\n    transition: background 0.2s;\n}\n.pp-switch::before {\n    content: \"\";\n    position: absolute;\n    top: 3px;\n    left: 3px;\n    width: 14px;\n    height: 14px;\n    border-radius: 50%;\n    background: white;\n    transition: transform 0.2s;\n}\n.pp-switch:checked {\n    background: var(--pp-accent);\n}\n.pp-switch:checked::before {\n    transform: translateX(12px);\n}\n.pp-choice {\n    justify-content: space-between;\n    cursor: pointer;\n}\n.pp-choice input {\n    width: 20px;\n    height: 20px;\n    flex: none;\n    accent-color: var(--pp-accent);\n    margin: 0;\n}\n.pp-description {\n    font-size: 12px;\n    line-height: 1.6;\n    color: var(--pp-muted);\n    white-space: pre-wrap;\n    overflow-wrap: anywhere;\n}\n.pp-module-info {\n    display: flex;\n    gap: 12px;\n    margin: 12px 0;\n}\n.pp-module-icon {\n    width: 48px;\n    height: 48px;\n    object-fit: contain;\n    flex: none;\n}\n.pp-module-details {\n    min-width: 0;\n    overflow-wrap: anywhere;\n}\n.pp-module-source {\n    color: inherit;\n    text-decoration: underline;\n}\n.pp-maintenance {\n    margin-top: 24px;\n}\n.pp-actions {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 8px;\n}\n.pp-actions button,\n.pp-error button {\n    min-height: 44px;\n    padding: 8px 12px;\n    border-radius: 6px;\n    background: var(--pp-surface);\n}\n.pp-panel .pp-danger {\n    color: #e45656;\n}\n.pp-cache {\n    max-height: 320px;\n    overflow: auto;\n    white-space: pre-wrap;\n    overflow-wrap: anywhere;\n}\n.pp-toast {\n    pointer-events: none;\n    position: fixed;\n    bottom: calc(30px + env(safe-area-inset-bottom));\n    left: 50%;\n    transform: translateX(-50%);\n    max-width: 90vw;\n    padding: 10px 16px;\n    border-radius: 8px;\n    background: #333e;\n    color: white;\n    font-size: 13px;\n    z-index: 20;\n}\n.pp-toast[data-kind=\"error\"] {\n    background: #8d2424;\n}\n.pp-panel :focus-visible {\n    outline: 2px solid var(--pp-accent);\n    outline-offset: -2px;\n}\n@media (prefers-color-scheme: dark) {\n    .pp-panel {\n        --pp-text: #e3e5e7;\n        --pp-background: #17181a;\n        --pp-surface: #232427;\n        --pp-border: #343538;\n    }\n}\n:root[data-theme=\"dark\"] .pp-panel {\n    --pp-text: #e3e5e7;\n    --pp-background: #17181a;\n    --pp-surface: #232427;\n    --pp-border: #343538;\n}\n:root[data-theme=\"light\"] .pp-panel {\n    --pp-text: #18191c;\n    --pp-background: #f6f7f8;\n    --pp-surface: #fff;\n    --pp-border: #e3e5e7;\n}\n@media (prefers-reduced-motion: reduce) {\n    .pp-panel .pp-switch,\n    .pp-panel .pp-switch::before {\n        transition: none;\n    }\n}\n";
 
 /**
  * 将 BoxJS 数组、app 或订阅转换为模块字段，保留原文件为唯一字段来源。
@@ -487,6 +505,165 @@ function createPreferencesClient({ catalog, fetch: request = globalThis.fetch.bi
 }
 
 /**
+ * 同一文档内的主页/子页导航；iframe 各自的实例通过浏览器联合历史协作。
+ * Navigate home/detail views within a document; iframe instances cooperate through joint browser history.
+ */
+class Navigation extends EventTarget {
+    #container;
+    #home;
+    #create;
+    #window;
+    #key = null;
+    #view;
+    #retiring;
+    #controller;
+    #animation;
+    #scroll = new WeakMap();
+    #onHistory = () => this.#route();
+    #onPageShow = event => {
+        if (event.persisted) this.#route(true);
+    };
+
+    /**
+     * 根视图始终保留；工厂按需提供子页，可用 signal 取消离开后的异步加载。
+     * Retain the home view and create details on demand; signal cancels async work after departure.
+     * @param {HTMLElement} container 由调用方布局的页面容器 / Caller-styled view container.
+     * @param {HTMLElement} home 已创建的主页节点 / Existing home view.
+     * @param {(key: string, signal: AbortSignal) => HTMLElement | undefined} create 子页工厂；未知路径返回 undefined / Detail factory; undefined for unknown routes.
+     */
+    constructor(container, home, create) {
+        super();
+        this.#container = container;
+        this.#home = home;
+        this.#create = create;
+        this.#window = container.ownerDocument.defaultView;
+        container.replaceChildren(home);
+        this.#window.addEventListener("popstate", this.#onHistory);
+        this.#window.addEventListener("hashchange", this.#onHistory);
+        this.#window.addEventListener("pageshow", this.#onPageShow);
+        this.#route();
+    }
+
+    /**
+     * 当前子页键；空字符串表示主页。
+     * Current detail key; empty means home.
+     */
+    get current() {
+        return this.#key;
+    }
+
+    /**
+     * 是否可以返回上一级或先前文档。
+     * Whether a parent view or previous document is available.
+     */
+    get canGoBack() {
+        return Boolean(this.#key) || this.#window.history.length > 1;
+    }
+
+    /**
+     * 加入子页历史；使用文档自身 URL，避免 srcdoc 按宿主 base URL 跳转。
+     * Push a detail using the document URL, avoiding srcdoc navigation against the host base URL.
+     * @param {string} key 子页键 / Detail key.
+     * @returns {void} 无返回值 / No return value.
+     */
+    open(key) {
+        if (key === this.#key) return;
+        const url = new URL(this.#window.location.href);
+        url.hash = encodeURIComponent(key);
+        this.#window.history.pushState({ ...this.#window.history.state, preferencePanesRoute: key }, "", url.href);
+        this.#route();
+    }
+
+    /**
+     * 沿浏览器联合历史返回，根页可退回宿主或上个文档。
+     * Go back through joint history, including a host or previous document from home.
+     * @returns {void} 无返回值 / No return value.
+     */
+    back() {
+        if (this.canGoBack) this.#window.history.back();
+    }
+
+    /**
+     * 解析 URL 并统一处理页面切换、加载取消与动画结束后的释放。
+     * Resolve the URL and coordinate transitions, cancellation and release after animation.
+     * @param {boolean} [reload] 从页面缓存恢复时重新创建子页 / Recreate a detail after bfcache restoration.
+     * @returns {void} 无返回值 / No return value.
+     */
+    #route(reload = false) {
+        const url = new URL(this.#window.location.href);
+        let key;
+        try {
+            key = decodeURIComponent(url.hash.slice(1));
+        } catch (error) {
+            if (!(error instanceof URIError)) throw error;
+            key = "";
+        }
+        if (!reload && key === this.#key) return;
+        this.#controller?.abort();
+        this.#controller = new AbortController();
+        const next = key ? this.#create(key, this.#controller.signal) : undefined;
+        if (!next) key = "";
+        const history = this.#window.history;
+        // 直接打开子页时建立一次主页历史；刷新不重复堆叠。
+        // Seed home history once for direct details, without stacking entries on reload.
+        if (url.hash && history.state?.preferencePanesRoute !== key) {
+            url.hash = "";
+            history.replaceState({ ...history.state, preferencePanesRoute: "" }, "", url.href);
+            if (key) {
+                url.hash = encodeURIComponent(key);
+                history.pushState({ ...history.state, preferencePanesRoute: key }, "", url.href);
+            }
+        }
+        const previous = this.#view;
+        const position = previous ? this.#window.getComputedStyle(previous).transform : "none";
+        this.#animation?.cancel();
+        this.#retiring?.remove();
+        this.#retiring = previous;
+        if (previous) {
+            this.#scroll.set(previous, previous.scrollTop);
+            previous.inert = true;
+        }
+        this.#key = key;
+        this.#view = next;
+        this.#home.inert = Boolean(next);
+        if (next) {
+            next.inert = false;
+            this.#container.append(next);
+            next.scrollTop = this.#scroll.get(next) ?? 0;
+        }
+        const moving = next ?? previous;
+        if (moving) {
+            const animation = moving.animate([{ transform: next ? "translateX(100%)" : position }, { transform: next ? "translateX(0)" : "translateX(100%)" }], { duration: this.#window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 280, easing: "cubic-bezier(.22,.61,.36,1)", fill: "forwards" });
+            this.#animation = animation;
+            animation.onfinish = () => {
+                if (this.#animation !== animation) return;
+                this.#retiring?.remove();
+                this.#retiring = undefined;
+                animation.cancel();
+                this.#animation = undefined;
+            };
+        }
+        this.dispatchEvent(new Event("change"));
+    }
+
+    /**
+     * 释放监听器、加载、动画和节点；调用方可重新创建导航。
+     * Release listeners, loads, animations and nodes so callers can recreate navigation.
+     * @returns {void} 无返回值 / No return value.
+     */
+    destroy() {
+        this.#window.removeEventListener("popstate", this.#onHistory);
+        this.#window.removeEventListener("hashchange", this.#onHistory);
+        this.#window.removeEventListener("pageshow", this.#onPageShow);
+        this.#controller?.abort();
+        this.#animation?.cancel();
+        this.#retiring?.remove();
+        this.#view?.remove();
+        this.#home.remove();
+    }
+}
+
+/**
  * 挂载已导入 BoxJS 对应的模块表单和短暂通知。
  * Mount the imported BoxJS module form and transient notifications.
  * @param {HTMLElement} root 包内挂载元素 / Internal mount element.
@@ -498,20 +675,27 @@ function mountPanel(root, catalog) {
     const document = root.ownerDocument;
     const window = document.defaultView;
     const shell = element("div", "pp-panel");
+    shell.dataset.module = catalog.module.module;
     const header = element("header", "pp-header");
     const back = element("button", "pp-back", "‹");
     back.setAttribute("aria-label", "返回");
     back.type = "button";
     const heading = element("h1", "pp-title", title);
+    const brand = element("div", "pp-brand");
+    const logo = element("span", "pp-brand-icon");
+    logo.setAttribute("aria-hidden", "true");
+    const image = icon(catalog.module.metadata, "");
+    if (image) logo.append(image);
+    brand.append(logo, heading);
     const viewport = element("div", "pp-viewport");
     const toast = element("div", "pp-toast");
     toast.setAttribute("role", "status");
     toast.hidden = true;
-    header.append(back, heading, element("span", "pp-nav-spacer"));
+    header.append(back, brand, element("span", "pp-nav-spacer"));
     shell.append(header, viewport, toast);
     root.append(shell);
     let timer,
-        secondaryRoute,
+        navigation,
         generation = 0,
         active = null,
         saving = false,
@@ -550,25 +734,6 @@ function mountPanel(root, catalog) {
     };
     const client = createPreferencesClient({ catalog, notify });
     /**
-     * 切换加载或错误视图，按用户的动态效果偏好播放过渡。
-     * Replace a loading or error view, respecting reduced-motion preferences.
-     * @param {HTMLElement} view 新视图 / New view.
-     * @param {number} direction 过渡方向，正数从右侧进入 / Transition direction; positive enters from the right.
-     * @returns {void} 无返回值 / No return value.
-     */
-    function replace(view, direction) {
-        const old = viewport.firstElementChild;
-        viewport.replaceChildren(view);
-        if (old && !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
-            view.animate(
-                [
-                    { opacity: 0.4, transform: `translateX(${direction * 24}px)` },
-                    { opacity: 1, transform: "translateX(0)" },
-                ],
-                { duration: 180, easing: "ease-out" },
-            );
-    }
-    /**
      * 打开模块并忽略已过期的异步结果。
      * Open a module and ignore stale asynchronous results.
      * @param {string} module 模块标识 / Module identifier.
@@ -579,16 +744,13 @@ function mountPanel(root, catalog) {
         active = module;
         back.disabled = window.history.length <= 1;
         heading.textContent = module;
-        replace(element("p", "pp-loading", "读取设置…"), 1);
+        viewport.replaceChildren(element("p", "pp-loading", "读取设置…"));
         try {
             await client.open(module);
             if (version === generation) controls();
         } catch (error) {
             if (version !== generation) return;
-            replace(
-                errorView(error, () => open(module)),
-                1,
-            );
+            viewport.replaceChildren(errorView(error, () => open(module)));
         }
     }
     /**
@@ -609,37 +771,18 @@ function mountPanel(root, catalog) {
         const editors = new Map();
         const summaries = [];
         const groups = new Map();
-        const scrollPositions = new WeakMap();
-        let activeEditor;
         let queue = Promise.resolve(),
             pendingWrites = 0;
         /**
-         * 根据 hash 切换多选页，保留上级 DOM 和滚动位置。
-         * Switch multi-select views by hash while retaining parent DOM and scroll position.
+         * 导航组件处理页面切换，表单只更新当前标题与返回按钮。
+         * Let navigation own transitions; the form only updates the title and back button.
          * @returns {void} 无返回值 / No return value.
          */
-        const showEditor = () => {
-            let key;
-            try {
-                key = decodeURIComponent(window.location.hash.slice(1));
-            } catch {
-                key = "";
-            }
-            const editor = editors.get(key);
-            const previous = activeEditor?.node ?? view;
-            const next = editor?.node ?? view;
-            if (previous !== next) {
-                scrollPositions.set(previous, previous.scrollTop);
-                previous.remove();
-                viewport.append(next);
-                next.scrollTop = scrollPositions.get(next) ?? 0;
-                if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) next.animate([{ transform: `translateX(${editor ? 100 : -100}%)` }, { transform: "translateX(0)" }], { duration: 260, easing: "cubic-bezier(.22,.61,.36,1)" });
-            }
-            activeEditor = editor;
+        const updateNavigation = () => {
+            const editor = editors.get(navigation.current);
             heading.textContent = editor?.title ?? definition.metadata?.name ?? active;
-            back.disabled = saving || (!editor && window.history.length <= 1);
+            back.disabled = saving || !navigation.canGoBack;
         };
-        secondaryRoute = showEditor;
         /**
          * 串行执行模块操作，保持输入可编辑。
          * Serialize module actions while keeping inputs editable.
@@ -666,7 +809,7 @@ function mountPanel(root, catalog) {
                     pendingWrites--;
                     saving = pendingWrites > 0;
                     if (destroyed && !saving) client.leave(active);
-                    back.disabled = saving || (!activeEditor && window.history.length <= 1);
+                    back.disabled = saving || !navigation.canGoBack;
                 }));
         }
         const metadata = definition.metadata;
@@ -755,10 +898,7 @@ function mountPanel(root, catalog) {
                     };
                     summaries.push(refresh);
                     refresh();
-                    link.onclick = () => {
-                        window.history.pushState({ ...window.history.state, preferencePane: active }, "", `#${encodeURIComponent(field.key)}`);
-                        showEditor();
-                    };
+                    link.onclick = () => navigation.open(field.key);
                     row.addEventListener("click", event => {
                         if (!link.contains(event.target)) link.click();
                     });
@@ -905,26 +1045,22 @@ function mountPanel(root, catalog) {
         actions.append(cacheView, cacheClear, reset);
         maintenance.append(actions, output);
         view.append(maintenance);
-        viewport.replaceChildren(view);
+        navigation?.destroy();
+        navigation = new Navigation(viewport, view, key => editors.get(key)?.node);
+        navigation.addEventListener("change", updateNavigation);
         for (const grow of growingInputs) grow();
-        showEditor();
+        updateNavigation();
     }
     /**
-     * 历史导航只切换当前模块的二级页，不接管项目主页或跨模块路由。
-     * History navigation switches only this module's subpages, never project or cross-module routes.
+     * 已加载的表单交由导航组件返回；加载阶段可以返回先前文档。
+     * Loaded forms delegate back to navigation; loading views can return to the previous document.
      * @returns {void} 无返回值 / No return value.
      */
-    const onPopState = () => secondaryRoute?.();
-    const onHashChange = () => secondaryRoute?.();
     back.onclick = () => {
         if (saving) return;
-        if (window.location.hash && window.history.state?.preferencePane !== active) {
-            window.history.replaceState(window.history.state, "", window.location.pathname);
-            secondaryRoute?.();
-        } else window.history.back();
+        if (navigation) navigation.back();
+        else window.history.back();
     };
-    window.addEventListener("popstate", onPopState);
-    window.addEventListener("hashchange", onHashChange);
     open(catalog.module.module);
     return {
         /**
@@ -934,8 +1070,7 @@ function mountPanel(root, catalog) {
          */
         destroy() {
             destroyed = true;
-            window.removeEventListener("popstate", onPopState);
-            window.removeEventListener("hashchange", onHashChange);
+            navigation?.destroy();
             generation++;
             if (active && !saving) client.leave(active);
             clearTimeout(timer);
@@ -1004,22 +1139,27 @@ function mount(boxjs, css = "") {
 
 let view;
 /**
- * 在具体模块地址导入 JSON 与 CSS，再交给模块渲染器。
- * Import JSON and CSS at a concrete module URL and pass them to the module renderer.
+ * 从 URL 或代理传递的 Header 导入 JSON/CSS，支持独立文档与 srcdoc。
+ * Import JSON/CSS from the URL or proxy-carried headers in standalone and srcdoc documents.
  * @returns {Promise<void>} 启动完成 / Startup completion.
  */
 async function start() {
     try {
         view?.destroy();
         view = undefined;
-        const match = /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.exec(location.pathname);
-        if (!match) throw new Error("Open a concrete module URL");
-        const module = match[1];
-        const [data, style] = await Promise.all([fetch(`/configs/${module}`, { cache: "no-store" }), fetch(`/settings/assets/${module}.css`, { cache: "no-store" })]);
-        if (data.status !== 200 || style.status !== 200) throw new Error(`HTTP ${data.status !== 200 ? data.status : style.status}`);
+        const context = document.querySelector('meta[name="preference-panes-inputs"]');
+        const inputs = context ? JSON.parse(decodeURIComponent(context.content)) : pageInputs(new URL(location.href));
+        const resources = [inputs.json, inputs.css].map(source => {
+            if (!source) return null;
+            const url = new URL(source, inputs.url);
+            if (!["http:", "https:"].includes(url.protocol)) throw new TypeError("Resources must use HTTP(S) URLs");
+            return url.href;
+        });
+        const [data, style] = await Promise.all(resources.map(url => (url ? fetch(url, { cache: "no-store", credentials: "omit" }) : null)));
+        if (data.status !== 200 || (style && style.status !== 200)) throw new Error(`HTTP ${data.status !== 200 ? data.status : style.status}`);
         const boxjs = await data.json();
-        if (new BoxJS(boxjs).module.module !== module) throw new Error("Imported JSON does not match the module URL");
-        view = mount(boxjs, await style.text());
+        if (new BoxJS(boxjs).module.module !== inputs.module) throw new Error("Imported JSON does not match the module URL");
+        view = mount(boxjs, style ? await style.text() : "");
     } catch (error) {
         document.querySelector("#preferences").replaceChildren(errorView(error, start));
     }

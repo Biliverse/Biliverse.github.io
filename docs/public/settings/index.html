@@ -6,12 +6,14 @@
     <meta name="color-scheme" content="light dark">
     <title>Biliverse</title>
     <link rel="stylesheet" href="https://s1.hdslb.com/bfs/static/2233-monorepo/customer-service-h5/static/css/index.545c1c91.css">
-    <link rel="stylesheet" href="/settings/home.css?v=0.7.0">
+    <link rel="stylesheet" href="/settings/home.css?v=0.7.1">
+    <link rel="stylesheet" href="/settings/theme.css?v=0.7.1">
   </head>
   <body>
+    <div id="pages">
     <main class="biliverse-home">
+      <header class="home-navbar"><button type="button" aria-label="返回">‹</button><div class="pp-brand"><picture class="pp-brand-icon"><source media="(prefers-color-scheme: dark)" srcset="/settings/logo_settings_dark.png"><img src="/settings/logo_settings_light.png" alt="Biliverse"></picture><h1>Biliverse</h1></div><span class="home-nav-spacer"></span></header>
       <picture class="brand-logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/logo_settings_dark.png"><img src="/settings/logo_settings_light.png" alt=""></picture>
-      <h1>Biliverse</h1>
       <section class="self-panel is-zh">
         <h2 class="header">插件</h2>
         <div class="container"><div class="scroll-view"><div class="scroll">
@@ -23,6 +25,10 @@
       </section>
       <p class="settings-note">设置保存在当前代理工具中。使用本地设置前，请将配置类型设为 PersistentStore。</p>
     </main>
-    <script type="module" src="/settings/home.js?v=0.7.0"></script>
+    </div>
+    <template id="module-template"><section id="module-host">
+      <div class="module-message"><button type="button">返回</button><p role="status"></p></div>
+    </section></template>
+    <script type="module" src="/settings/home.js?v=0.7.1"></script>
   </body>
 </html>

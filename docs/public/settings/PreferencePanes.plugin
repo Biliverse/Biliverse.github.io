@@ -3,11 +3,8 @@
 #!homepage = https://github.com/NSNanoCat/PreferencePanes
 #!openUrl = https://biliverse.github.io/settings/
 
-[Rewrite]
-^https:\/\/biliverse\.github\.io\/settings\/Enhanced\/?(?:\?.*)?$ mock-response-body data-type=html data-path=https://biliverse.github.io/settings/assets/Enhanced.html?v=0.7.0 status-code=200
-
 [Script]
-http-request ^https:\/\/biliverse\.github\.io\/api\/Enhanced(?:\/|\?|$) requires-body=1, script-path=https://biliverse.github.io/settings/assets/Enhanced.request.js?v=0.7.0, tag=PreferencePanes
+http-request ^https:\/\/biliverse\.github\.io\/(?:api\/Enhanced(?:\/[^?]*)?|settings\/Enhanced\/?)(?:\?.*)?$ requires-body=1, script-path=https://biliverse.github.io/settings/assets/Enhanced.request.js?v=0.7.1, tag=PreferencePanes
 
 [MitM]
 hostname = biliverse.github.io

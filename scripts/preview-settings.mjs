@@ -15,7 +15,7 @@ const server = http.createServer(async (request, reply) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
     if (url.pathname === "/") { reply.writeHead(302, { Location: "/settings/" }); reply.end(); return; }
-    const group = /^\/(api|configs)\/Enhanced(?:\/|$)/.exec(url.pathname)?.[1];
+    const group = /^\/settings\/Enhanced\/?$/.test(url.pathname) ? "api" : /^\/(api|configs)\/Enhanced(?:\/|$)/.exec(url.pathname)?.[1];
     if (group) {
       let body = "";
       for await (const chunk of request) body += chunk;

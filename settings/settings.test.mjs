@@ -9,8 +9,13 @@ test("the landing page is site-owned and contains only configuration discovery",
   assert.equal((html.match(/data-module=/g) ?? []).length, 4);
   assert.ok(html.includes("<h1>Biliverse</h1>"));
   assert.doesNotMatch(html, /assets\/app\.mjs|pp-fields|安装模块/);
-  assert.doesNotMatch(script, /\/api\/|PreferencePanes|mount\(/);
+  assert.doesNotMatch(script, /\/api\/|mount\(/);
   assert.match(script, /method: "HEAD"/);
+  assert.match(script, /"X-PreferencePanes-JSON"/);
+  assert.match(script, /"X-PreferencePanes-CSS"/);
+  assert.match(script, /frame.srcdoc = html/);
+  assert.match(script, /import \{ Navigation \} from "\/settings\/assets\/navigation.mjs"/);
+  assert.doesNotMatch(script, /pushState|replaceState|\.animate\(|popstate|biliverseModule/);
   assert.deepEqual(await readFile(new URL("../docs/public/settings/index.html", import.meta.url)), Buffer.from(html));
 });
 
@@ -24,7 +29,7 @@ test("the published module reads and writes independently without claiming the h
     $done: result => resolve(result.response), console: { log() {}, error() {} }, setTimeout, clearTimeout,
   }));
   for (const pathname of ["/settings/", "/settings/Global", "/configs/Enhanced"]) assert.equal(await run("GET", pathname), undefined);
-  assert.match((await run("GET", "/settings/Enhanced")).body, /v=0\.7\.0/);
+  assert.match((await run("GET", "/settings/Enhanced")).body, /v=0\.7\.1/);
   assert.equal((await run("POST", "/api/Enhanced/Settings/Home/Top_left", "mine")).status, 200);
   assert.equal(JSON.parse((await run("GET", "/api/Enhanced/Settings/Home/Top_left")).body), "mine");
   assert.equal((await run("DELETE", "/api/Enhanced/")).status, 200);
@@ -34,7 +39,7 @@ test("the published module reads and writes independently without claiming the h
 test("independent proxy profiles claim only Enhanced module routes", async () => {
   for (const extension of ["sgmodule", "plugin", "snippet", "stoverride", "conf"]) {
     const text = await readFile(new URL(`PreferencePanes.${extension}`, import.meta.url), "utf8");
-    assert.ok(text.includes("Enhanced.request.js?v=0.7.0"));
+    assert.ok(text.includes("Enhanced.request.js?v=0.7.1"));
     const patterns = text.split("\n").flatMap(line => {
       if (line.includes("pattern=")) return [line.match(/pattern=([^,]+)/)[1]];
       if (line.includes("- match:")) return [line.trim().slice("- match: ".length)];
