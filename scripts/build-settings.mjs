@@ -1,6 +1,8 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { rollup } from "rollup";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
 
 const root = path.resolve(import.meta.dirname, "..");
 const check = process.argv.includes("--check");
@@ -20,6 +22,19 @@ if (stamp) {
   const label = `构建于 <time datetime="${builtAt.toISOString()}">${builtAt.toLocaleString("sv-SE", { timeZone: "Asia/Shanghai" })} UTC+8</time> · ${revision}`;
   outputs.set("settings/index.html", outputs.get("settings/index.html").toString().replace("本地预览（未构建）", label));
 }
+// 不支持远程文件 Mock 的代理直接返回同次构建的静态资源，包含 PNG 原始字节。
+// Proxies without remote file mocks return same-build static resources, including original PNG bytes.
+const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png" };
+const assets = Object.fromEntries([...outputs].map(([name, body]) => [name === "settings/index.html" ? "/settings/" : `/${name}`, [types[path.extname(name)], name.endsWith(".png") ? [...body] : body.toString()]]));
+const bundle = await rollup({ input: path.join(root, "settings/mock.mjs"), plugins: [nodeResolve(), {
+  name: "website-assets",
+  resolveId(id) { if (id === "#website-assets") return id; },
+  load(id) { if (id === "#website-assets") return `export default ${JSON.stringify(assets)};`; },
+}] });
+try {
+  const { output } = await bundle.generate({ format: "iife" });
+  outputs.set("settings/mock.js", output[0].code);
+} finally { await bundle.close(); }
 for (const [name, body] of outputs) {
   const target = path.join(root, stamp ? "doc_build" : "docs/public", name);
   if (check) {

@@ -1,5 +1,15 @@
 # 入口位置与客服中心样式调查
 
+## 2026-09-09：官方域名下的本机 Mock 入口
+
+用户截图确认 `0454427` 版本仍不能退出。本机客户端存在 JSBridge URL 白名单，在方法分发之前检查来源域名；失败会记录 `is not allowed to call jsbridge method!` 后返回。github.io 不在内置名单中，单独加载官方 SDK 不会改变网页来源。
+
+根据用户授权，Enhanced 入口改为 `https://app.bilibili.com/settings/?navhide=1`。Enhanced 安装首页与 15 项静态资源的精确映射；Surge 使用 Map Local、Loon 使用远程文件 Mock，下载源仍是 `https://biliverse.github.io/settings/`。不具备原生远程文件 Mock 的平台使用网站构建的 `settings/mock.js`，直接返回同次构建的 HTML、JS、CSS 和 PNG 字节；通过 util 的 done 适配宿主，不联网、不读写存储。该脚本与页面构建时间一致。
+
+四个业务模块各自的 `/configs/{module}` 规则和 PreferencePanes 通用 API 规则同时支持 app.bilibili.com 与原 github.io 域名。页面、配置和存储请求保持同源；原 `/x/...` 官方接口不被静态规则接管。源文件、渲染器和业务配置的仓库职责不变，PreferencePanes 不需要修改或发布。
+
+静态映射保持请求 URL，不使用会把浏览器地址改回 github.io 的 302 跳转。普通 github.io 页面仍可访问；App 内全屏退出必须从更新后的 Enhanced 入口进入。域名满足内置白名单是必要条件，最终关闭行为仍需客户端验证。
+
 ## 2026-09-09：游戏中心返回行为复核
 
 Apifox 客户端快捷请求实际取得 [游戏中心 HTML](https://app.biligame.com/) 与它引用的 [gamecenter-h5 脚本](https://s1.hdslb.com/bfs/static/gameweb/gamecenter-h5/gamecenter-h5.bc85b1e3aadf770e3c47.js)，均为 HTTP 200。Apifox 项目接口列表只有最近游玩记录，没有游戏中心网页定义，因此使用快捷请求读取公开页面，未修改现有接口。
