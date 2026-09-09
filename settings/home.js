@@ -1,4 +1,4 @@
-import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.0";
+import { Navigation, ModuleFrame, ModuleStatus, ActionMenu } from "/settings/assets/navigation.mjs?v=0.9.1";
 import { inBilibili, closeBilibili, observeAppearance, confirmBilibili, exportCapabilities } from "./bilibili.mjs?v=official-ui-1";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
@@ -51,7 +51,7 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   status.textContent = "正在打开设置…";
   const frame = new ModuleFrame(button.dataset.page, { signal, headers: {
     "X-PreferencePanes-JSON": `/configs/${module}`,
-    "X-PreferencePanes-CSS": "/settings/theme.css?v=0.9.0",
+    "X-PreferencePanes-CSS": "/settings/theme.css?v=0.9.1",
   } });
   moduleFrame = frame;
   if (inBilibili()) frame.addEventListener("confirm", event => {
