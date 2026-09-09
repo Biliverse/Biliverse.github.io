@@ -7,18 +7,36 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { inBilibili, closeBilibili } from "./bilibili.mjs";
 
-test("app exit uses the official close protocol and never fabricates browser history", async () => {
+test("app exit queries the game-center capability before calling the official SDK", async () => {
   const calls = [];
   const browser = { navigator: { userAgent: "Mozilla/5.0" } };
   assert.equal(inBilibili(browser), false);
-  const app = { ...browser, biliBridge: { inBiliApp: true, useNative: async method => calls.push(method) } };
+  const app = { ...browser, biliBridge: {
+    inBiliApp: true,
+    isNewJsBridge: () => true,
+    isSupport: async method => { calls.push(["support", method]); return true; },
+    callNative: request => calls.push(["call", request]),
+  } };
   assert.equal(inBilibili(app), true);
   await closeBilibili(app);
-  const native = { ...browser, webkit: { messageHandlers: { biliInjectV2: { postMessage: text => calls.push(JSON.parse(text)) } } } };
-  await closeBilibili(native);
-  assert.equal(calls[0], "global.closeBrowser");
-  assert.deepEqual(calls[1], { method: "global.closeBrowser", data: {}, callbackId: 0 });
+  assert.deepEqual(calls, [["support", "global.closeBrowser"], ["call", { method: "global.closeBrowser" }]]);
   await assert.rejects(closeBilibili(browser), /App/);
+});
+
+test("legacy game-center exit remains available without a modern close capability", async () => {
+  let closed = 0;
+  const app = { navigator: { userAgent: "Mozilla/5.0" }, biliapp: { closeBrowser: () => closed++ } };
+  assert.equal(inBilibili(app), true);
+  await closeBilibili(app);
+  app.biliBridge = { isNewJsBridge: () => true, isSupport: async () => false, callNative: () => assert.fail("Unsupported call") };
+  await closeBilibili(app);
+  assert.equal(closed, 2);
+  delete app.biliapp;
+  await assert.rejects(closeBilibili(app), /未提供/);
+  app.biliBridge.isSupport = async () => { throw new Error("Bridge unavailable"); };
+  await assert.rejects(closeBilibili(app), /Bridge unavailable/);
+  app.biliBridge.isNewJsBridge = () => false;
+  await assert.rejects(closeBilibili(app), /未提供/);
 });
 
 test("preview uses the common PreferencePanes API and module-owned config artifacts", { timeout: 15000 }, async () => {
