@@ -1,4 +1,4 @@
-import { Navigation, ModuleFrame } from "/settings/assets/navigation.mjs?v=0.8.0";
+import { Navigation, ModuleFrame, ModuleStatus } from "/settings/assets/navigation.mjs?v=0.8.0";
 import { inBilibili, closeBilibili } from "./bilibili.mjs";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
@@ -17,7 +17,11 @@ const navbarImage = navbar.querySelector(".pp-brand img");
 const navbarDark = navbar.querySelector(".pp-brand source");
 const homeIcon = { light: navbarImage.getAttribute("src"), dark: navbarDark.getAttribute("srcset") };
 const template = document.querySelector("#module-template");
-let generation = 0;
+const statuses = buttons.map(button => {
+  const status = new ModuleStatus(button.querySelector(".module-status"));
+  status.addEventListener("change", () => { button.disabled = status.state.status !== "installed"; });
+  return { button, status };
+});
 let moduleFrame;
 const navigation = new Navigation(document.querySelector("#pages"), home, (module, signal) => {
   const button = buttons.find(button => button.dataset.module === module);
@@ -80,18 +84,7 @@ function updateNavbar() {
 function probe() {
   updateNavbar();
   if (navigation.current) return;
-  const current = ++generation;
-  for (const button of buttons) {
-    button.disabled = true;
-    const status = button.querySelector(".module-status");
-    status.textContent = "检测中";
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    fetch(`/configs/${encodeURIComponent(button.dataset.module)}`, { method: "HEAD", cache: "no-store", credentials: "omit", signal: controller.signal })
-      .then(response => { if (generation === current) { button.disabled = response.status !== 200; status.textContent = button.disabled ? "未响应" : ""; } })
-      .catch(() => { if (generation === current) { button.disabled = true; status.textContent = "未响应"; } })
-      .finally(() => clearTimeout(timer));
-  }
+  for (const { button, status } of statuses) status.check(`/configs/${encodeURIComponent(button.dataset.module)}`);
 }
 navigation.addEventListener("change", probe);
 probe();

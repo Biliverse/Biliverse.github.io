@@ -74,7 +74,7 @@ test("website deploys only generic frontend assets and owns the custom landing p
   assert.equal((html.match(/data-module=/g) ?? []).length, 4);
   assert.ok(html.includes("<h1>Biliverse</h1>"));
   assert.doesNotMatch(script, /\/api\/|mount\(|srcdoc|DOMParser|\.replace\(|pushState|\.animate\(/);
-  assert.match(script, /method: "HEAD"/);
+  assert.match(script, /new ModuleStatus/);
   assert.match(script, /ModuleFrame/);
   assert.doesNotMatch(build, /boxjs|\.\.\/Enhanced|build\(boxjs/);
   assert.ok(assets.every(name => !/\.boxjs\.json$|\.(config|request)\.js$/.test(name)));
