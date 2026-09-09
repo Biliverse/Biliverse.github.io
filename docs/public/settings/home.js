@@ -1,4 +1,5 @@
 import { Navigation, ModuleFrame } from "/settings/assets/navigation.mjs?v=0.8.0";
+import { inBilibili, closeBilibili } from "./bilibili.mjs";
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
@@ -40,7 +41,12 @@ const navigation = new Navigation(document.querySelector("#pages"), home, (modul
   return host;
 });
 navigation.addEventListener("change", () => { navbarTitle.textContent = navigation.current || "Biliverse"; });
-homeBack.onclick = () => navigation.current ? moduleFrame.back() : navigation.back();
+homeBack.onclick = async () => {
+  if (navigation.current) { moduleFrame.back(); return; }
+  if (!inBilibili()) { navigation.back(); return; }
+  try { await closeBilibili(); }
+  catch (error) { window.alert(error.message); }
+};
 // 挂载后观察大图标，滚出导航栏下方的可见区域时切换到栏中央小图标。
 // Observe the mounted hero icon and show its centered compact variant once it scrolls past the bar.
 const brandObserver = new IntersectionObserver(([entry]) => navbar.toggleAttribute("data-compact", !entry.isIntersecting), {
@@ -56,7 +62,7 @@ for (const button of buttons) button.onclick = () => navigation.open(button.data
  */
 function probe() {
   navbarTitle.textContent = navigation.current || "Biliverse";
-  homeBack.disabled = !navigation.canGoBack;
+  homeBack.disabled = !navigation.canGoBack && !inBilibili();
   if (navigation.current) return;
   const current = ++generation;
   for (const button of buttons) {

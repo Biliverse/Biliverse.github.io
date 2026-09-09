@@ -5,6 +5,21 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { inBilibili, closeBilibili } from "./bilibili.mjs";
+
+test("app exit uses the official close protocol and never fabricates browser history", async () => {
+  const calls = [];
+  const browser = { navigator: { userAgent: "Mozilla/5.0" } };
+  assert.equal(inBilibili(browser), false);
+  const app = { ...browser, biliBridge: { inBiliApp: true, useNative: async method => calls.push(method) } };
+  assert.equal(inBilibili(app), true);
+  await closeBilibili(app);
+  const native = { ...browser, webkit: { messageHandlers: { biliInjectV2: { postMessage: text => calls.push(JSON.parse(text)) } } } };
+  await closeBilibili(native);
+  assert.equal(calls[0], "global.closeBrowser");
+  assert.deepEqual(calls[1], { method: "global.closeBrowser", data: {}, callbackId: 0 });
+  await assert.rejects(closeBilibili(browser), /App/);
+});
 
 test("preview uses the common PreferencePanes API and module-owned config artifacts", { timeout: 15000 }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), "biliverse-preview-"));

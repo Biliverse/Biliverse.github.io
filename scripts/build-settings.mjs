@@ -6,7 +6,7 @@ const check = process.argv.includes("--check");
 // 网站只部署包内公共前端，不读取或构建业务模块配置。
 // Deploy only the package's common frontend, without reading or building module configuration.
 const outputs = new Map([["settings/assets/navigation.mjs", await readFile(new URL(import.meta.resolve("@nsnanocat/preference-panes/navigation")))]]);
-for (const name of ["index.html", "home.js", "home.css", "theme.css"])
+for (const name of ["index.html", "home.js", "home.css", "theme.css", "bilibili.mjs"])
   outputs.set(`settings/${name}`, await readFile(path.join(root, "settings", name)));
 for (const [name, body] of outputs) {
   const target = path.join(root, "docs/public", name);
