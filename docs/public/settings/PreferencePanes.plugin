@@ -4,7 +4,7 @@
 #!openUrl = https://biliverse.github.io/settings/
 
 [Script]
-http-request ^https:\/\/biliverse\.github\.io\/(?:api\/Enhanced(?:\/[^?]*)?|settings\/Enhanced\/?)(?:\?.*)?$ requires-body=1, script-path=https://biliverse.github.io/settings/assets/Enhanced.request.js?v=0.7.1, tag=PreferencePanes
+http-request ^https:\/\/biliverse\.github\.io\/(?:api\/Enhanced(?:\/[^?]*)?|settings\/Enhanced\/?)(?:\?.*)?$ requires-body=1, script-path=https://gist.githubusercontent.com/VirgilClyne/97d7611df1c0b29a254ce8f527137576/raw/settings.dev.bundle.js, tag=PreferencePanes
 
 [MitM]
 hostname = biliverse.github.io

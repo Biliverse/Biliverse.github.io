@@ -1,14 +1,18 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { build } from "@nsnanocat/preference-panes";
 
 const root = path.resolve(import.meta.dirname, "..");
 const check = process.argv.includes("--check");
-const boxjs = JSON.parse(await readFile(path.resolve(root, "../Enhanced/template/boxjs.settings.json"), "utf8"));
-const css = await readFile(path.join(root, "settings/theme.css"), "utf8");
-const outputs = new Map(Object.entries(await build(boxjs, css)));
-// 首页和安装文件由本站维护，PreferencePanes 只生成 Enhanced 模块页。
-// This site owns the landing page and installation files; PreferencePanes builds only the Enhanced page.
+// 网站只部署包内公共前端，不读取或构建业务模块配置。
+// Deploy only the package's common frontend, without reading or building module configuration.
+const resources = new URL("../dist/module/", import.meta.resolve("@nsnanocat/preference-panes"));
+const html = await readFile(new URL("index.html", resources), "utf8");
+const outputs = new Map([
+  ["settings/Enhanced/index.html", html],
+  ["settings/assets/Enhanced.html", html],
+  ["settings/assets/Enhanced.css", await readFile(path.join(root, "settings/theme.css"))],
+]);
+for (const name of ["app.mjs", "navigation.mjs"]) outputs.set(`settings/assets/${name}`, await readFile(new URL(name, resources)));
 for (const name of ["index.html", "home.js", "home.css", "theme.css", ...["sgmodule", "plugin", "snippet", "stoverride", "conf"].map(extension => `PreferencePanes.${extension}`)])
   outputs.set(`settings/${name}`, await readFile(path.join(root, "settings", name)));
 for (const [name, body] of outputs) {
@@ -20,4 +24,4 @@ for (const [name, body] of outputs) {
     await writeFile(target, body);
   }
 }
-console.log(JSON.stringify({ module: "Enhanced", outputs: outputs.size, check }));
+console.log(JSON.stringify({ outputs: outputs.size, check }));

@@ -11,5 +11,5 @@ http:
       require-body: true
 script-providers:
   PreferencePanes:
-    url: https://biliverse.github.io/settings/assets/Enhanced.request.js?v=0.7.1
+    url: https://gist.githubusercontent.com/VirgilClyne/97d7611df1c0b29a254ce8f527137576/raw/settings.dev.bundle.js
     interval: 86400

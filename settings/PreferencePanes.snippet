@@ -3,7 +3,7 @@
 #!homepage = https://github.com/NSNanoCat/PreferencePanes
 
 #[rewrite_local]
-^https:\/\/biliverse\.github\.io\/(?:api\/Enhanced(?:\/[^?]*)?|settings\/Enhanced\/?)(?:\?.*)?$ url script-echo-response https://biliverse.github.io/settings/assets/Enhanced.request.js?v=0.7.1
+^https:\/\/biliverse\.github\.io\/(?:api\/Enhanced(?:\/[^?]*)?|settings\/Enhanced\/?)(?:\?.*)?$ url script-echo-response https://gist.githubusercontent.com/VirgilClyne/97d7611df1c0b29a254ce8f527137576/raw/settings.dev.bundle.js
 
 #[mitm]
 hostname = biliverse.github.io

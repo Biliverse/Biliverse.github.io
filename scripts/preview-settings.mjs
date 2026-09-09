@@ -11,16 +11,16 @@ const server = http.createServer(async (request, reply) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
     if (url.pathname === "/") { reply.writeHead(302, { Location: "/settings/" }); reply.end(); return; }
-    const route = /^\/(settings|configs|api)\/([a-zA-Z0-9_-]+)(?:\/(.*))?$/.exec(url.pathname);
-    if (route && (route[1] !== "settings" || !route[3])) {
+    const route = /^\/(configs|api)\/([a-zA-Z0-9_-]+)(?:\/(.*))?$/.exec(url.pathname);
+    if (route) {
       const [, group, module] = route;
       let body = "";
       for await (const chunk of request) body += chunk;
-      // 构建后立即使用同批次的页面与前端资源，避免进程缓存旧版本脚本。
-      // Read current build artifacts so the server cannot retain an older page runtime.
+      // 仅在本地预览中读取各模块自己构建的产物，网站不保存配置或存储脚本。
+      // Local previews read each module's own artifacts; the website stores neither configs nor storage scripts.
       let script;
       try {
-        script = await readFile(path.join(publicDir, `settings/assets/${module}.${group === "configs" ? "config" : "request"}.js`), "utf8");
+        script = await readFile(path.resolve(import.meta.dirname, "../..", module, "dist", `${group === "configs" ? "config" : "settings"}.dev.bundle.js`), "utf8");
       } catch (error) {
         if (error.code !== "ENOENT") throw error;
         reply.writeHead(404); reply.end(); return;
