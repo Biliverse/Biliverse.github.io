@@ -5,7 +5,34 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import vm from "node:vm";
 import { inBilibili, closeBilibili } from "./bilibili.mjs";
+
+test("website mocks return same-build resources without requests or storage access", async () => {
+  const source = await readFile(new URL("../docs/public/settings/mock.js", import.meta.url), "utf8");
+  const png = await readFile(new URL("icons/Enhanced_subject_dark.png", import.meta.url));
+  for (const qx of [false, true]) {
+    for (const method of ["GET", "HEAD"]) {
+      const result = await new Promise(resolve => vm.runInNewContext(source, {
+        $request: { url: "https://app.bilibili.com/settings/assets/Enhanced_subject_dark.png?v=1", method },
+        $environment: { "stash-version": "test" }, $script: { startTime: Date.now() },
+        ...(qx ? { $task: { fetch: () => assert.fail("No outbound requests") } } : {}),
+        $done: resolve, console: { log() {}, error() {} }, ArrayBuffer, Uint8Array,
+      }));
+      const response = qx ? result : result.response;
+      assert.equal(response.headers["Content-Type"], "image/png");
+      assert.equal(response.status, qx ? "HTTP/1.1 200 OK" : 200);
+      if (method === "GET") assert.deepEqual(Buffer.from(qx ? response.bodyBytes : response.body), png);
+      else assert.equal(response.body, "");
+    }
+  }
+  for (const url of ["https://app.bilibili.com/x/v2/account/mine", "https://app.bilibili.com/settings/Enhanced", "https://app.bilibili.com/configs/Enhanced", "https://app.bilibili.com/api/get"]) {
+    const result = await new Promise(resolve => vm.runInNewContext(source, {
+      $request: { url, method: "GET" }, $task: {}, $done: resolve, console: { log() {}, error() {} },
+    }));
+    assert.equal(result.status, "HTTP/1.1 404 Not Found");
+  }
+});
 
 test("app exit queries the game-center capability before calling the official SDK", async () => {
   const calls = [];
