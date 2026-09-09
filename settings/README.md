@@ -4,17 +4,17 @@
 
 ## PreferencePanes 0.7.2 接入
 
-本站安装 `@nsnanocat/preference-panes@0.7.2`，构建时读取 Enhanced 的 `template/boxjs.settings.json` 与本站 theme.css，调用 `build(boxjs, css)` 生成 Enhanced 模块页。默认布局来自包；首页与模块页的粉色标题、返回按钮和强调色统一由本站 theme.css 提供。
+本站从已安装的 `@nsnanocat/preference-panes` 复制公共 HTML、app.mjs、navigation.mjs，并部署自己的 theme.css。构建不读取 Enhanced 仓库，不解析或打包业务配置。默认布局来自包；首页与模块页的粉色主题由本站维护。
 
-模块产物为 `/settings/Enhanced/`、assets/Enhanced.html、Enhanced.boxjs.json、Enhanced.css、Enhanced.request.js、Enhanced.config.js 和公共 app.mjs。PreferencePanes 不生成本站首页，不读取 site.boxjs.json/proxies.json，也不要求本站拼接代理代码。
+网站仅保存模块 HTML 外壳、公共浏览器 JS、CSS、图标和安装规则。不保存 BoxJS JSON、配置响应脚本或内嵌配置的存储脚本。
 
-Enhanced 只安装 `/configs/Enhanced` 的 JSON Mock，保留 App 内 Biliverse 入口注入；没有 npm 依赖、页面或读写代码。独立 PreferencePanes 安装文件由本站维护，只接管 Enhanced 模块页与 `/api/Enhanced/…`。0.7.2 保留既有 0.7.1 配置和 API 地址，已有 Enhanced 与独立设置模块无需改动；更新部署本站前端即可获得修复。
+Enhanced 的 `/configs/Enhanced` 是代理中的虚拟接口：dev 从 Enhanced 的 Gist 返回同次构建的 JSON，正式版从与业务脚本相同的 Release tag 返回 JSON。非原生 Mock 平台使用 Enhanced 同次发布的 config.bundle.js。独立设置模块的存储脚本也来自 Enhanced 发布产物，通用实现由 PreferencePanes 构建器生成；本站不生成或托管这些文件。
 
 Global、Redirect、ADBlock 尚无对应新版 JSON Mock，首页仍显示禁用状态。本站不再生成它们的旧固化表单或向其仓库写入设置脚本。
 
 ## 安装
 
-首次使用需要 Enhanced 的 JSON Mock 及下面对应代理的独立设置模块；已安装者升级本站 0.7.2 无需更新订阅：
+此次迁移需要更新 Enhanced 订阅及下面对应代理的独立设置模块，移除旧的 github.io 配置资源引用。下面安装文件默认使用 Enhanced dev Gist；正式版可将脚本来源换为对应 Release tag 的 settings.bundle.js。以后仅修改界面时，仍只需部署网站。
 
 | 代理 | 文件 |
 | --- | --- |
@@ -42,6 +42,6 @@ pnpm settings:test
 pnpm settings:preview
 ```
 
-预览执行已生成的模块脚本，存储为独立内存。首页是真实静态文件，不使用 PreferencePanes 的文件导入测试台。该包的测试台仅用于开发模块页。
+预览从同级业务仓库的 dist 读取该模块的 config.dev.bundle.js 和 settings.dev.bundle.js，存储为独立内存；先在对应模块仓库运行 npm run dev。不会把这些产物复制到网站。模块页由网站静态文件提供，配置缺失时返回 404。
 
-本次发布顺序为包 → 本站 main/Pages，不修改 Enhanced。dev 本身不会触发 Pages 发布。原始图片保持不变，透明裁切与亮暗图标记录见 icons-manifest.json；官方样式来源见 customer-service-research.md 与 provenance.json。
+迁移发布顺序为 Enhanced 构建/发布配置与脚本 → 更新订阅 → 本站 main/Pages 清理旧文件。dev 本身不会触发 Pages 发布。原始图片保持不变，透明裁切与亮暗图标记录见 icons-manifest.json；官方样式来源见 customer-service-research.md 与 provenance.json。
