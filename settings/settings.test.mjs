@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFile, readdir, mkdtemp, mkdir, copyFile, writeFile, rm } from "node:fs/promises";
+import { access, readFile, readdir, mkdtemp, mkdir, copyFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -174,4 +174,9 @@ test("website deploys only generic frontend assets and owns the custom landing p
   assert.ok(assets.every(name => !/\.boxjs\.json$|\.(config|request)\.js$/.test(name)));
   assert.ok(!assets.includes("app.mjs") && !assets.includes("Enhanced.html"));
   assert.deepEqual(await readFile(new URL("../docs/public/settings/index.html", import.meta.url)), Buffer.from(html));
+  for (const file of ["official", "official-styles.zip"]) await assert.rejects(access(new URL(`../docs/public/settings/${file}`, import.meta.url)), { code: "ENOENT" });
+  const theme = await readFile(new URL("theme.css", import.meta.url), "utf8");
+  assert.match(theme, /https:\/\/hilo\.bilibili\.com\/h5_common\/theme\.min\.css/);
+  const mock = await readFile(new URL("../docs/public/settings/mock.js", import.meta.url), "utf8");
+  assert.doesNotMatch(mock, /@bilibili\/b-style|--Ga0:|official-styles\.zip|settings\/official\//);
 });
