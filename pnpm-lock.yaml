@@ -12,8 +12,8 @@ importers:
         specifier: ^2.4.6
         version: 2.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@nsnanocat/preference-panes':
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.7.0
+        version: 0.7.0
       '@rspress/core':
         specifier: ^2.0.18
         version: 2.0.18(@rspack/core@2.1.5(@swc/helpers@0.5.23))(@types/mdast@4.0.4)(@types/react@18.3.13)(core-js@3.39.0)(micromark-util-types@2.0.2)(micromark@4.0.2)
@@ -136,14 +136,8 @@ packages:
       react: '>=18.3.1 <20'
       react-dom: '>=18.3.1 <20'
 
-  '@nsnanocat/preference-panes@0.6.0':
-    resolution: {integrity: sha512-11J8LjFaeIVBDa80dOgCqyQ2GDF763H7bMJoAdZyA0/olCKeh6tzQJTW2H+G4bzjyLgwkbXsoaJEfu39K0bpGw==, tarball: https://npm.pkg.github.com/download/@nsnanocat/preference-panes/0.6.0/1dc144ac2e645e6c0c9567dd742fdc90ff1f0049}
-
-  '@nsnanocat/url@1.2.6':
-    resolution: {integrity: sha512-ZQxnufkN9/CBoMwvTSxrwUtqNeP8czdlhCD0zztXHq1PtIDAR76IWuFrQHRowHdcIvAOUa3AOxkdzp8OMIWkqQ==, tarball: https://npm.pkg.github.com/download/@nsnanocat/url/1.2.6/500254d28a51ead292278e1c6c77e03b86509fc7}
-
-  '@nsnanocat/util@2.7.4':
-    resolution: {integrity: sha512-0/n18zctviHLiujU6N4+ILobcoLg+N1c0TVso+pb78P1HM1hcaYnt41qbmvtQgy7UD+fapAQwgJk/Gu0Z3uRIA==, tarball: https://npm.pkg.github.com/download/@nsnanocat/util/2.7.4/d29eba0f31acd5f9426802ab48cd86b5cda9bd93}
+  '@nsnanocat/preference-panes@0.7.0':
+    resolution: {integrity: sha512-FoYCBIwhxqsv6M+snzoet7GGF+YQzRmmnouMfZdyBQ39L4sbwN2AGzOazDGZR4HJjfv9jYWjA2fqbZvl52VrQw==, tarball: https://npm.pkg.github.com/download/@nsnanocat/preference-panes/0.7.0/9c6213808306644c68bc27b1c33a0ef236539d4a}
 
   '@parcel/watcher-android-arm64@2.6.0':
     resolution: {integrity: sha512-trgpLSCKRC/huFjXX/Smh+0sWe4+YtKfktIToiMl59ghz7z+qkH6kMvNnUbLyRs9N11t8l4svSCs1+5B3rOAhA==}
@@ -518,10 +512,6 @@ packages:
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
 
-  data-uri-to-buffer@4.0.1:
-    resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
-    engines: {node: '>= 12'}
-
   debug@4.3.7:
     resolution: {integrity: sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ==}
     engines: {node: '>=6.0'}
@@ -591,19 +581,8 @@ packages:
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
 
-  fetch-blob@3.2.0:
-    resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
-    engines: {node: ^12.20 || >= 14.13}
-
-  fetch-cookie@3.2.0:
-    resolution: {integrity: sha512-n61pQIxP25C6DRhcJxn7BDzgHP/+S56Urowb5WFxtcRMpU6drqXD90xjyAsVQYsNSNNVbaCcYY1DuHsdkZLuiA==}
-
   flexsearch@0.8.212:
     resolution: {integrity: sha512-wSyJr1GUWoOOIISRu+X2IXiOcVfg9qqBRyCPRUdLMIGJqPzMo+jMRlvE83t14v1j0dRMEaBbER/adQjp6Du2pw==}
-
-  formdata-polyfill@4.0.10:
-    resolution: {integrity: sha512-buewHzMvYL29jdeQTVILecSaZKnt/RJWjoZCF5OW60Z67/GmSLBkOFM7qh1PI3zFNtJbaZL5eQu1vLfazOwj4g==}
-    engines: {node: '>=12.20.0'}
 
   get-east-asian-width@1.6.0:
     resolution: {integrity: sha512-QRbvDIbx6YklUe6RxeTeleMR0yv3cYH6PsPZHcnVn7xv7zO1BHN8r0XETu8n6Ye3Q+ahtSarc3WgtNWmehIBfA==}
@@ -932,15 +911,6 @@ packages:
 
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
-
-  node-domexception@1.0.0:
-    resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
-    engines: {node: '>=10.5.0'}
-    deprecated: Use your platform's native DOMException instead
-
-  node-fetch@3.3.2:
-    resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   nprogress@0.2.0:
     resolution: {integrity: sha512-I19aIingLgR1fmhftnbWWO3dXc0hSxqHQHQb3H8m+K3TnEn/iSeTZZOyvKXWqQESMwuUVnatlCnZdLBZZt2VSA==}
@@ -1304,22 +1274,11 @@ packages:
     resolution: {integrity: sha512-GTt8rSKje5FilG+wEdfCkOcLL7LWqpMlr2c3LRuKt/YXxcJ52aGSbGBAdI4L3aaqfrBt6y711El53ItyH1NWzg==}
     engines: {node: '>=16.0.0'}
 
-  tldts-core@7.4.12:
-    resolution: {integrity: sha512-nYNzS2WRf4QJmjzFFgAxLOBjyBxAGRbCy9PVBPaglcYyYajh40VBn+v5Ngr96ZMc7oM0+aCJdtQnNejvdBnXMQ==}
-
-  tldts@7.4.12:
-    resolution: {integrity: sha512-WylhSDKVeYnWXL3a+vKTaOxjnOeEGw938hImY8zoRWJjRRK/Jp1K+IihBzIONpUmW4e3WmXT6q5FW6vlESVZCA==}
-    hasBin: true
-
   to-vfile@8.0.0:
     resolution: {integrity: sha512-IcmH1xB5576MJc9qcfEC/m/nQCFt3fzMHz45sSlgJyTWjRbKW1HAkJpuf3DgE57YzIlZcwcBZA5ENQbBo4aLkg==}
 
   toggle-selection@1.0.6:
     resolution: {integrity: sha512-BiZS+C1OS8g/q2RRbJmy59xpyghNBqrr6k5L/uKBGRsTfxmu3ffiRnd8mlGPUVayg8pvfi5urfnu8TU7DVOkLQ==}
-
-  tough-cookie@6.0.2:
-    resolution: {integrity: sha512-exgYmnmL/sJpR3upZfXG5PoatXQii55xAiXGXzY+sROLZ/Y+SLcp9PgJNI9Vz37HpQ74WvDcLT8eqm+kV3FzrA==}
-    engines: {node: '>=16'}
 
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
@@ -1387,10 +1346,6 @@ packages:
 
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
-
-  web-streams-polyfill@3.3.3:
-    resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
-    engines: {node: '>= 8'}
 
   wordwrap@1.0.0:
     resolution: {integrity: sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q==}
@@ -1507,17 +1462,7 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  '@nsnanocat/preference-panes@0.6.0':
-    dependencies:
-      '@nsnanocat/url': 1.2.6
-      '@nsnanocat/util': 2.7.4
-
-  '@nsnanocat/url@1.2.6': {}
-
-  '@nsnanocat/util@2.7.4':
-    dependencies:
-      fetch-cookie: 3.2.0
-      node-fetch: 3.3.2
+  '@nsnanocat/preference-panes@0.7.0': {}
 
   '@parcel/watcher-android-arm64@2.6.0':
     optional: true
@@ -1909,8 +1854,6 @@ snapshots:
 
   csstype@3.1.3: {}
 
-  data-uri-to-buffer@4.0.1: {}
-
   debug@4.3.7:
     dependencies:
       ms: 2.1.3
@@ -1985,21 +1928,7 @@ snapshots:
 
   extend@3.0.2: {}
 
-  fetch-blob@3.2.0:
-    dependencies:
-      node-domexception: 1.0.0
-      web-streams-polyfill: 3.3.3
-
-  fetch-cookie@3.2.0:
-    dependencies:
-      set-cookie-parser: 2.7.2
-      tough-cookie: 6.0.2
-
   flexsearch@0.8.212: {}
-
-  formdata-polyfill@4.0.10:
-    dependencies:
-      fetch-blob: 3.2.0
 
   get-east-asian-width@1.6.0: {}
 
@@ -2673,14 +2602,6 @@ snapshots:
   node-addon-api@7.1.1:
     optional: true
 
-  node-domexception@1.0.0: {}
-
-  node-fetch@3.3.2:
-    dependencies:
-      data-uri-to-buffer: 4.0.1
-      fetch-blob: 3.2.0
-      formdata-polyfill: 4.0.10
-
   nprogress@0.2.0: {}
 
   oniguruma-parser@0.12.2: {}
@@ -3093,21 +3014,11 @@ snapshots:
 
   sync-message-port@1.1.3: {}
 
-  tldts-core@7.4.12: {}
-
-  tldts@7.4.12:
-    dependencies:
-      tldts-core: 7.4.12
-
   to-vfile@8.0.0:
     dependencies:
       vfile: 6.0.3
 
   toggle-selection@1.0.6: {}
-
-  tough-cookie@6.0.2:
-    dependencies:
-      tldts: 7.4.12
 
   trim-lines@3.0.1: {}
 
@@ -3195,8 +3106,6 @@ snapshots:
       vfile-message: 4.0.2
 
   web-namespaces@2.0.1: {}
-
-  web-streams-polyfill@3.3.3: {}
 
   wordwrap@1.0.0: {}
 

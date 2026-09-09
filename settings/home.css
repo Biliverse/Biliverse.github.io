@@ -1,5 +1,5 @@
-/* 通用菜单样式；项目可通过 JSON 引用官方组件样式。
- * Generic menu styles; projects may reference official component styles through JSON. */
+/* Biliverse 定制首页，基于官方客服组件 CSS 的本地适配。
+ * Biliverse landing-page adaptations layered over official customer-service component CSS. */
 body {
 	margin: 0;
 	overflow-x: hidden;
@@ -7,7 +7,7 @@ body {
 	background: #f6f7f8;
 	color: #18191c;
 }
-.pp-home {
+.biliverse-home {
 	max-width: 720px;
 	margin: auto;
 	padding: 32px 16px;
@@ -24,7 +24,7 @@ body {
 	height: 100%;
 	object-fit: contain;
 }
-.pp-home h1 {
+.biliverse-home h1 {
 	text-align: center;
 	font-size: 26px;
 	margin: 12px 0 32px;
@@ -128,7 +128,4 @@ body {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-}
-.pp-site-error {
-	padding: 16px;
 }

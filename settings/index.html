@@ -1,23 +1,28 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
-  <title>Biliverse 设置</title>
-  <link rel="stylesheet" href="https://s1.hdslb.com/bfs/static/2233-monorepo/customer-service-h5/static/css/index.545c1c91.css">
-  <style>/* FORM_CSS */</style>
-  <style>/* APP_CSS */</style>
-  <style>/* SELF_SERVICE_CSS */</style>
-  <style>
-    #content{position:relative;overflow:hidden;max-width:none;margin:0;padding:0;height:calc(100vh - 52px - env(safe-area-inset-top));height:calc(100dvh - 52px - env(safe-area-inset-top))}
-    .settings-screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-x:contain;background:var(--bg2);padding:12px max(16px,calc((100% - 688px)/2)) calc(28px + env(safe-area-inset-bottom))}
-  </style>
-</head>
-<body>
-  <header class="navbar"><button id="back" aria-label="返回">‹</button><h1 id="title">Biliverse 设置</h1><span class="nav-spacer"></span></header>
-  <main id="content" aria-live="polite"></main>
-  <div id="toast" role="status" hidden></div>
-  <script>/* APP_JS */</script>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <title>Biliverse</title>
+    <link rel="stylesheet" href="https://s1.hdslb.com/bfs/static/2233-monorepo/customer-service-h5/static/css/index.545c1c91.css">
+    <link rel="stylesheet" href="/settings/home.css?v=0.7.0">
+  </head>
+  <body>
+    <main class="biliverse-home">
+      <picture class="brand-logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/logo_settings_dark.png"><img src="/settings/logo_settings_light.png" alt=""></picture>
+      <h1>Biliverse</h1>
+      <section class="self-panel is-zh">
+        <h2 class="header">插件</h2>
+        <div class="container"><div class="scroll-view"><div class="scroll">
+          <button class="self-item is-zh" data-module="Enhanced" data-page="/settings/Enhanced" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/Enhanced_dark.png"><img src="/settings/assets/Enhanced_light.png" alt=""></picture><span class="name">Enhanced</span><span class="module-status">检测中</span></button>
+          <button class="self-item is-zh" data-module="Global" data-page="/settings/Global" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/Global_dark.png"><img src="/settings/assets/Global_light.png" alt=""></picture><span class="name">Global</span><span class="module-status">检测中</span></button>
+          <button class="self-item is-zh" data-module="Redirect" data-page="/settings/Redirect" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/Redirect_dark.png"><img src="/settings/assets/Redirect_light.png" alt=""></picture><span class="name">Redirect</span><span class="module-status">检测中</span></button>
+          <button class="self-item is-zh" data-module="ADBlock" data-page="/settings/ADBlock" disabled><picture class="logo"><source media="(prefers-color-scheme: dark)" srcset="/settings/assets/ADBlock_dark.png"><img src="/settings/assets/ADBlock_light.png" alt=""></picture><span class="name">ADBlock</span><span class="module-status">检测中</span></button>
+        </div></div></div>
+      </section>
+      <p class="settings-note">设置保存在当前代理工具中。使用本地设置前，请将配置类型设为 PersistentStore。</p>
+    </main>
+    <script type="module" src="/settings/home.js?v=0.7.0"></script>
+  </body>
 </html>

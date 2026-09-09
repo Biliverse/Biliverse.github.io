@@ -1,58 +1,43 @@
 import http from "node:http";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
-// Isolated preview store; never reads or writes the proxy application's settings.
+// 预览真实发布产物；代理只使用独立内存，不导入 Enhanced 业务代码。
+// Preview the real deployment artifacts with isolated storage, without importing Enhanced business code.
+const publicDir = path.resolve(import.meta.dirname, "../docs/public");
 const store = new Map();
-globalThis.$environment = { "surge-version": "local-preview" };
-globalThis.$persistentStore = { read: key => store.get(key) ?? null, write: (value, key) => { store.set(key, value); return true; } };
-globalThis.$argument = {};
-globalThis.$httpClient = { get: async (request, done) => {
+const scripts = {
+  api: await readFile(path.join(publicDir, "settings/assets/Enhanced.request.js"), "utf8"),
+  configs: await readFile(path.join(publicDir, "settings/assets/Enhanced.config.js"), "utf8"),
+};
+const server = http.createServer(async (request, reply) => {
   try {
-    if (request.url !== "https://biliverse.github.io/settings/assets/Enhanced.boxjs.json") throw new Error("Unexpected preview resource");
-    done(null, { status: 200, headers: { "Content-Type": "application/json" } }, await readFile(path.resolve(import.meta.dirname, "../docs/public/settings/assets/Enhanced.boxjs.json"), "utf8"));
-  } catch (error) { done(error); }
-} };
-const requests = {};
-const proxyScript = await readFile(new URL("../docs/public/settings/assets/PreferencePanes.request.js", import.meta.url), "utf8");
-const configScript = await readFile(new URL("../docs/public/settings/assets/Enhanced.config.js", import.meta.url), "utf8");
-const assets = new Map([["/settings/", "settings/index.html"], ["/settings/logo.png", "settings/logo.png"]]);
-assets.set("/settings/Enhanced", "settings/Enhanced/index.html");
-for (const name of ["index.html", "app.mjs", "panel.css", "home.css", "site.boxjs.json", "Enhanced.boxjs.json", "Enhanced.config.js", "PreferencePanes.request.js"]) assets.set(`/settings/assets/${name}`, `settings/assets/${name}`);
-for (const mode of ["light", "dark"]) assets.set(`/settings/logo_settings_${mode}.png`, `settings/logo_settings_${mode}.png`);
-for (const name of ["Enhanced", "Global", "Redirect", "ADBlock"]) {
-  for (const mode of ["light", "dark"]) assets.set(`/settings/assets/${name}_${mode}.png`, `settings/assets/${name}_${mode}.png`);
-  if (name !== "Enhanced") requests[name] = (await import(pathToFileURL(path.resolve(import.meta.dirname, "../..", name, "src/process/Request.mjs")))).Request;
-  assets.set(`/settings/${name}/`, `settings/${name}/index.html`);
-  assets.set(`/settings/assets/${name}.html`, `settings/assets/${name}.html`);
-}
-const server = http.createServer(async (request, response) => {
-  try {
-    const url = new URL(request.url, "https://biliverse.github.io");
-    if (url.pathname === "/") { response.writeHead(302, { Location: "/settings/" }); response.end(); return; }
-    if (assets.has(url.pathname) && ["GET", "HEAD"].includes(request.method)) {
-      const body = await readFile(path.resolve(import.meta.dirname, "../docs/public", assets.get(url.pathname)));
-      const type = { ".png": "image/png", ".mjs": "text/javascript", ".js": "text/javascript", ".css": "text/css", ".json": "application/json" }[path.extname(url.pathname)] ?? "text/html";
-      response.writeHead(200, { "Content-Type": `${type}; charset=utf-8` });
-      response.end(request.method === "HEAD" ? undefined : body); return;
+    const url = new URL(request.url, `http://${request.headers.host}`);
+    if (url.pathname === "/") { reply.writeHead(302, { Location: "/settings/" }); reply.end(); return; }
+    const group = /^\/(api|configs)\/Enhanced(?:\/|$)/.exec(url.pathname)?.[1];
+    if (group) {
+      let body = "";
+      for await (const chunk of request) body += chunk;
+      const result = await new Promise(resolve => vm.runInNewContext(scripts[group], {
+        $environment: { "surge-version": "preview" }, $script: { startTime: Date.now() / 1000 },
+        $persistentStore: { read: key => store.get(key), write: (value, key) => { store.set(key, value); return true; } },
+        $request: { url: url.href, method: request.method, headers: request.headers, body },
+        $done: value => resolve(value.response), console, setTimeout, clearTimeout,
+      }));
+      reply.writeHead(result?.status ?? 404, result?.headers); reply.end(result?.body); return;
     }
-    const name = url.pathname.match(/^\/settings\/api\/([^/]+)$/)?.[1];
-    const script = url.pathname.startsWith("/api/") ? proxyScript : url.pathname === "/configs/Enhanced" ? configScript : undefined;
-    if (!requests[name] && !script) { response.writeHead(404); response.end(); return; }
-    let body = "";
-    for await (const chunk of request) { body += chunk; if (body.length > 65536) { response.writeHead(413); response.end(); return; } }
-    globalThis.$argument = { Storage: "Argument", LogLevel: "OFF" };
-    const headers = { ...request.headers };
-    if (headers.origin === `http://${request.headers.host}`) headers.origin = url.origin;
-    const input = { url: url.toString(), method: request.method, headers, body };
-    const $response = script ? await new Promise(resolve => vm.runInNewContext(script, {
-      $request: input, $environment: globalThis.$environment, $persistentStore: globalThis.$persistentStore, $httpClient: globalThis.$httpClient,
-      $script: { startTime: Date.now() / 1000 }, $done: result => resolve(result.response), console, setTimeout, clearTimeout,
-    })) : (await requests[name](input)).$response;
-    if (!$response) { response.writeHead(404); response.end(); return; }
-    response.writeHead($response.status, $response.headers); response.end($response.body);
-  } catch (error) { console.error(error); response.writeHead(500); response.end("Preview failed"); }
+    if (!url.pathname.startsWith("/settings/") || !["GET", "HEAD"].includes(request.method)) { reply.writeHead(404); reply.end(); return; }
+    let target = path.join(publicDir, url.pathname.slice(1));
+    if (!path.extname(target)) target = path.join(target, "index.html");
+    try {
+      const body = await readFile(target);
+      const mime = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json", ".png": "image/png" }[path.extname(target)] ?? "text/plain";
+      reply.writeHead(200, { "Content-Type": mime, "Cache-Control": "no-store" }); reply.end(request.method === "HEAD" ? undefined : body);
+    } catch (error) {
+      if (!["ENOENT", "ENOTDIR"].includes(error.code)) throw error;
+      reply.writeHead(404); reply.end();
+    }
+  } catch (error) { console.error(error); reply.writeHead(500); reply.end("Preview failed"); }
 });
-server.listen(Number(process.env.PORT || 8791), "127.0.0.1", () => console.log(`Settings preview: http://127.0.0.1:${server.address().port}/settings/`));
+server.listen(Number(process.env.PORT ?? 0), "127.0.0.1", () => console.log(`Biliverse settings: http://127.0.0.1:${server.address().port}/settings/`));

@@ -1,13 +1,13 @@
 #!name = Biliverse PreferencePanes
-#!desc = 通用设置页面与持久化读写。设置入口仅由各插件的 BoxJS JSON Mock 决定。
+#!desc = Enhanced 模块设置页与持久化读写；项目首页独立托管。
 #!homepage = https://github.com/NSNanoCat/PreferencePanes
 #!openUrl = https://biliverse.github.io/settings/
 
 [Rewrite]
-^https:\/\/biliverse\.github\.io\/settings\/(?:[a-zA-Z0-9_-]+\/?)?(?:\?.*)?$ mock-response-body data-type=html data-path=https://biliverse.github.io/settings/assets/index.html status-code=200
+^https:\/\/biliverse\.github\.io\/settings\/Enhanced\/?(?:\?.*)?$ mock-response-body data-type=html data-path=https://biliverse.github.io/settings/assets/Enhanced.html?v=0.7.0 status-code=200
 
 [Script]
-http-request ^https:\/\/biliverse\.github\.io\/api\/ requires-body=1, script-path=https://biliverse.github.io/settings/assets/PreferencePanes.request.js, tag=PreferencePanes
+http-request ^https:\/\/biliverse\.github\.io\/api\/Enhanced(?:\/|\?|$) requires-body=1, script-path=https://biliverse.github.io/settings/assets/Enhanced.request.js?v=0.7.0, tag=PreferencePanes
 
 [MitM]
 hostname = biliverse.github.io
