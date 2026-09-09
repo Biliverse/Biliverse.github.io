@@ -153,6 +153,13 @@ body {
 	color: #797f89;
 	padding: 16px 0;
 }
+.settings-build {
+	font-size: 12px;
+	line-height: 1.6;
+	text-align: center;
+	color: #797f89;
+	padding-bottom: env(safe-area-inset-bottom);
+}
 @media (prefers-color-scheme: dark) {
 	body {
 		background: #101114;
