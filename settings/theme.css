@@ -3,40 +3,113 @@
 :root {
   --biliverse-accent: var(--brand_pink, #ff6699);
 }
-:root[data-theme="dark"] { color-scheme: dark; }
-:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
 .pp-panel {
   --pp-accent: var(--biliverse-accent);
 }
-.pp-panel[data-module="Enhanced"] { --biliverse-module-logo: url("/settings/assets/Enhanced_subject_light.png"); }
-.pp-panel[data-module="Global"] { --biliverse-module-logo: url("/settings/assets/Global_subject_light.png"); }
-.pp-panel[data-module="Redirect"] { --biliverse-module-logo: url("/settings/assets/Redirect_subject_light.png"); }
-.pp-panel[data-module="ADBlock"] { --biliverse-module-logo: url("/settings/assets/ADBlock_subject_light.png"); }
+.pp-panel[data-module="Enhanced"] {
+  --biliverse-module-logo: url("/settings/assets/Enhanced_subject.png");
+}
+.pp-panel[data-module="Global"] {
+  --biliverse-module-logo: url("/settings/assets/Global_subject.png");
+}
+.pp-panel[data-module="Redirect"] {
+  --biliverse-module-logo: url("/settings/assets/Redirect_subject.png");
+}
+.pp-panel[data-module="ADBlock"] {
+  --biliverse-module-logo: url("/settings/assets/ADBlock_subject.png");
+}
 /* 未提供 BoxJS icon 的字段数组由项目主题补充正文图标，通用包不绑定品牌。
  * The project theme supplies content icons for field arrays without BoxJS icon metadata. */
-.pp-panel:is([data-module="Enhanced"], [data-module="Global"], [data-module="Redirect"], [data-module="ADBlock"]) .pp-module-logo:empty {
+.pp-panel:is([data-module="Enhanced"], [data-module="Global"], [data-module="Redirect"], [data-module="ADBlock"])
+  .pp-module-logo:empty {
   display: block;
   background: var(--biliverse-module-logo) center / contain no-repeat;
 }
-@media (prefers-color-scheme: dark) {
-  .pp-panel[data-module="Enhanced"] { --biliverse-module-logo: url("/settings/assets/Enhanced_subject_dark.png"); }
-  .pp-panel[data-module="Global"] { --biliverse-module-logo: url("/settings/assets/Global_subject_dark.png"); }
-  .pp-panel[data-module="Redirect"] { --biliverse-module-logo: url("/settings/assets/Redirect_subject_dark.png"); }
-  .pp-panel[data-module="ADBlock"] { --biliverse-module-logo: url("/settings/assets/ADBlock_subject_dark.png"); }
-}
-:root[data-theme="dark"] .pp-panel[data-module="Enhanced"] { --biliverse-module-logo: url("/settings/assets/Enhanced_subject_dark.png"); }
-:root[data-theme="dark"] .pp-panel[data-module="Global"] { --biliverse-module-logo: url("/settings/assets/Global_subject_dark.png"); }
-:root[data-theme="dark"] .pp-panel[data-module="Redirect"] { --biliverse-module-logo: url("/settings/assets/Redirect_subject_dark.png"); }
-:root[data-theme="dark"] .pp-panel[data-module="ADBlock"] { --biliverse-module-logo: url("/settings/assets/ADBlock_subject_dark.png"); }
-:root[data-theme="light"] .pp-panel[data-module="Enhanced"] { --biliverse-module-logo: url("/settings/assets/Enhanced_subject_light.png"); }
-:root[data-theme="light"] .pp-panel[data-module="Global"] { --biliverse-module-logo: url("/settings/assets/Global_subject_light.png"); }
-:root[data-theme="light"] .pp-panel[data-module="Redirect"] { --biliverse-module-logo: url("/settings/assets/Redirect_subject_light.png"); }
-:root[data-theme="light"] .pp-panel[data-module="ADBlock"] { --biliverse-module-logo: url("/settings/assets/ADBlock_subject_light.png"); }
-.module-message button,
 .pp-panel .pp-header,
 .pp-panel .pp-back {
   color: var(--biliverse-accent);
 }
-.module-message button {
-  border-color: var(--biliverse-accent);
+
+/* 主页直接复用客服中心官方 CSS；这里只定义 Biliverse 素材和模块容器。
+ * The landing page directly uses official customer-service CSS; only Biliverse assets and the module container are defined here. */
+html {
+  font-size: calc(100vw / 3);
+}
+body {
+  font-size: 16px;
+  overflow-x: hidden;
+}
+.brand-logo {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 24px auto;
+}
+.brand-logo,
+.self-item .logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.self-item .logo {
+  border-radius: 50%;
+  padding: .064rem;
+  background: var(--Pi0);
+}
+button.self-item {
+  background: transparent;
+  cursor: pointer;
+}
+.self-panel.is-zh .scroll-view .scroll .self-item[data-module] {
+  height: auto;
+}
+.module-status {
+  font-size: .088rem;
+  line-height: .12rem;
+  min-height: .12rem;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text3);
+}
+.self-item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.footer-hint .hint-content .customer-mail {
+  margin-top: .064rem;
+}
+#pages {
+  background: inherit;
+}
+#module-host {
+  position: fixed;
+  inset: 0;
+  background: inherit;
+  z-index: 1;
+  box-shadow: -8px 0 24px #00000014;
+}
+#module-host iframe {
+  display: block;
+  border: 0;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+}
+.module-message {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: max(20px, env(safe-area-inset-top)) 20px;
+  background: inherit;
+}
+.module-message[hidden] {
+  display: none;
 }
