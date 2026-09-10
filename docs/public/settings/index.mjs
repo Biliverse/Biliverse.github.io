@@ -51,30 +51,23 @@ async function updateNavigation() {
   if (revision !== navigationRevision) return;
   await bridge.useNative('ui.setNavigationButton', {
     buttons:
-      !navigationState.busy && navigationState.actions.length ? [{ id: 'biliverse.more', type: 3, visible: true }] : [],
+      !navigationState.busy && navigationState.actions.length
+        ? [
+            {
+              id: 'biliverse.more',
+              type: 3,
+              menu: { content: navigationState.actions.map((action) => ({ id: action.id, text: action.label })) },
+              visible: true,
+            },
+          ]
+        : [],
   });
 }
 
 bridge.addChannel('ui.observeNavigationClick', (result) => {
-  if (
-    result.code !== 0 ||
-    result.data?.id !== 'biliverse.more' ||
-    navigationState.busy ||
-    navigationState.actions.length === 0
-  )
-    return;
-  const revision = navigationRevision;
-  const actions = navigationState.actions;
-  bridge
-    .useNative('liveUI.selectPanel', {
-      title: '更多操作',
-      options: actions.map((action) => ({ text: action.label, value: action.id })),
-    })
-    .then((result) => {
-      if (revision !== navigationRevision || navigationState.busy) return;
-      const action = actions.find((item) => item.id === result.data.text);
-      if (action) frame.perform(action.id);
-    });
+  if (result.code !== 0 || navigationState.busy) return;
+  const action = navigationState.actions.find((item) => item.id === result.data?.id);
+  if (action) frame.perform(action.id);
 });
 
 const navigation = new Navigation(container, home, (module, signal) => {
