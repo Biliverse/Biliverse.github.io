@@ -1,6 +1,6 @@
+import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
-import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 // 预览真实发布产物；代理只使用独立内存，不导入 Enhanced 业务代码。
@@ -34,7 +34,7 @@ const server = http.createServer(async (request, reply) => {
     const common =
       /^\/api\//.test(url.pathname) ||
       /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.test(url.pathname) ||
-      ['/settings/assets/app.mjs', '/settings/assets/host.mjs'].includes(url.pathname);
+      ['/settings/assets/app.mjs', '/settings/assets/navigation.mjs'].includes(url.pathname);
     if (config || common) {
       let body = '';
       for await (const chunk of request) body += chunk;
