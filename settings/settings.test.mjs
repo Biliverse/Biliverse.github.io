@@ -8,13 +8,18 @@ import { once } from "node:events";
 import vm from "node:vm";
 import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs";
 
-test("native Toast uses the client title payload and does not wait for a nonexistent callback", async () => {
+test('common LiveUI Toast uses the native message payload', async () => {
   let call;
-  const host = { biliBridge: { initPromise: Promise.resolve(), isSupport: async name => name === "biliapp.showToast", callNative: request => { call = request; } } };
-  await toastBilibili("修改成功", host);
-  assert.deepEqual(call, { method: "biliapp.showToast", data: { title: "修改成功" } });
-  host.biliBridge.isSupport = async () => false;
-  await assert.rejects(toastBilibili("失败", host), /不支持/);
+  const host = {
+    biliBridge: {
+      initPromise: Promise.resolve(),
+      useNative: async (...args) => {
+        call = args;
+      },
+    },
+  };
+  await toastBilibili('修改成功', host);
+  assert.deepEqual(call, ['liveUI.toast', { type: 'short', msg: '修改成功' }]);
 });
 
 test("capability export contains method lists without user or storage data", async () => {
@@ -46,24 +51,44 @@ test("native confirmations use validated button fields and wait for a user decis
   assert.equal(await confirmed, true);
 });
 
-test("official appearance callbacks drive live theme and keyboard changes", async () => {
-  const subscriptions = new Map(), themes = [], heights = [];
-  const host = { navigator: { userAgent: "BiliApp" }, biliBridge: {
-    initPromise: Promise.resolve(), isSupport: async () => true,
-    callNative: options => subscriptions.set(options.method, options),
-  } };
-  await observeAppearance({ theme: value => themes.push(value), keyboard: height => heights.push(height) }, host);
-  const theme = subscriptions.get("ui.observeThemeChange");
+test('common V2 appearance channels request initial state, ignore acknowledgements and clean up', async () => {
+  const subscriptions = new Map();
+  const themes = [];
+  const heights = [];
+  const removed = [];
+  const host = {
+    navigator: { userAgent: 'BiliApp' },
+    biliBridge: {
+      initPromise: Promise.resolve(),
+      callNative: assert.fail,
+      addChannel: (method, callback, data) => subscriptions.set(method, { callback, data }),
+      removeChannel: (method, callback) => removed.push([method, callback]),
+    },
+  };
+  const dispose = await observeAppearance(
+    { theme: (value) => themes.push(value), keyboard: (height) => heights.push(height) },
+    host,
+  );
+  const theme = subscriptions.get('ui.observeThemeChange');
   assert.equal(theme.data.immediately, true);
-  theme.onChangeTheme({ theme: 2, night: 1 });
-  theme.onChangeTheme({ theme: 1, night: 0 });
-  assert.deepEqual(themes, [{ theme: 2, night: 1 }, { theme: 1, night: 0 }]);
-  const keyboard = subscriptions.get("ui.observeKeyboardStatus");
-  keyboard.onShow({ height: 320 });
-  keyboard.onChangeHeight({ height: 280 });
-  keyboard.onHide();
-  assert.deepEqual(heights, [320, 280, 0]);
-  await observeAppearance({ theme() { assert.fail(); }, keyboard() { assert.fail(); } }, { navigator: { userAgent: "Mozilla" } });
+  theme.callback({ code: 0 });
+  theme.callback({ code: 0, data: { theme: 2 } });
+  theme.callback({ code: 0, data: { theme: 1 } });
+  assert.deepEqual(themes, [{ theme: 2 }, { theme: 1 }]);
+  const keyboard = subscriptions.get('ui.observeKeyboardStatus');
+  keyboard.callback({ code: 0 });
+  keyboard.callback({ code: 0, data: { status: true, height: 320 } });
+  keyboard.callback({ code: 0, data: { status: false, height: 320 } });
+  assert.deepEqual(heights, [320, 0]);
+  dispose();
+  assert.deepEqual(removed, [
+    ['ui.observeThemeChange', theme.callback],
+    ['ui.observeKeyboardStatus', keyboard.callback],
+  ]);
+  assert.equal(
+    await observeAppearance({ theme: assert.fail, keyboard: assert.fail }, { navigator: { userAgent: 'Mozilla' } }),
+    undefined,
+  );
 });
 
 test("website mocks return same-build resources without requests or storage access", async () => {
@@ -92,40 +117,58 @@ test("website mocks return same-build resources without requests or storage acce
   }
 });
 
-test("native navigation uses official titles and built-in more menus; only active actions dispatch", async () => {
+test("native more button opens the bottom selector and dispatches its returned value", async () => {
   const calls = [], selected = [], errors = [];
   let listener, removed;
   const bridge = {
     inBiliApp: true, isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
     callNative: assert.fail,
-    useNative: async (method, data) => calls.push({ method, data }),
+    useNative: async (method, data) => {
+      calls.push({ method, data });
+      return { data: { text: "viewCaches" } };
+    },
     addChannel: (name, callback) => { assert.equal(name, "ui.observeNavigationClick"); listener = callback; },
     removeChannel: (name, callback) => { removed = [name, callback]; },
   };
   assert.equal(inBilibili({ biliBridge: bridge }), true);
-  assert.equal(inBilibili({ navigator: { userAgent: "Mozilla" } }), false);
   const navigation = new NativeNavigation(id => selected.push(id), error => errors.push(error), { biliBridge: bridge });
   const actions = [{ id: "viewCaches", label: "查看缓存" }, { id: "reset", label: "重置模块" }];
   await navigation.update({ title: "Enhanced", actions, busy: false });
   assert.deepEqual(calls[0], { method: "ui.setNavigationHide", data: { hide: false } });
-  assert.deepEqual(calls.at(-2), { method: "ui.setTitle", data: { title: "Enhanced" } });
-  assert.deepEqual(calls.at(-1), { method: "ui.setNavigationButton", data: { buttons: [{
-    id: "biliverse.more", type: 3, menu: { content: [{ id: "viewCaches", text: "查看缓存" }, { id: "reset", text: "重置模块" }] }, visible: true,
-  }] } });
+  assert.deepEqual(calls.at(-1), { method: "ui.setNavigationButton", data: { buttons: [{id: "biliverse.more", type: 3, visible: true}] } });
   listener({ code: 0 });
-  listener({ code: 0, data: { id: "unknown" } });
   listener({ code: 0, data: { id: "viewCaches" } });
+  assert.deepEqual(selected, []);
+  listener({ code: 0, data: { id: "biliverse.more" } });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls.at(-1), { method: "liveUI.selectPanel", data: {title: "更多操作", options: [{text: "查看缓存", value: "viewCaches"}, {text: "重置模块", value: "reset"}]} });
+  assert.deepEqual(selected, ["viewCaches"]);
   const saving = navigation.update({ title: "Enhanced", actions, busy: true });
-  listener({ code: 0, data: { id: "reset" } });
+  listener({ code: 0, data: { id: "biliverse.more" } });
   await saving;
   assert.deepEqual(calls.at(-1).data, { buttons: [] });
   await navigation.update({ title: "Biliverse", actions: [], busy: false });
-  listener({ code: 0, data: { id: "reset" } });
+  listener({ code: 0, data: { id: "biliverse.more" } });
   listener({ code: 103, message: "channel unavailable" });
   assert.equal(errors[0].message, "channel unavailable");
   navigation.destroy();
   assert.deepEqual(removed, ["ui.observeNavigationClick", listener]);
-  assert.deepEqual(selected, ["viewCaches"]);
+});
+
+test("a selector result cannot run an action after the module has changed", async () => {
+  let listener, resolveSelection;
+  const bridge = {
+    isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
+    addChannel: (_, callback) => { listener = callback; }, removeChannel() {},
+    useNative: async method => method === "liveUI.selectPanel" ? new Promise(resolve => { resolveSelection = resolve; }) : undefined,
+  };
+  const navigation = new NativeNavigation(assert.fail, assert.fail, {biliBridge: bridge});
+  await navigation.update({title: "Enhanced", actions: [{id: "reset", label: "重置模块"}], busy: false});
+  listener({code: 0, data: {id: "biliverse.more"}});
+  await navigation.update({title: "Global", actions: [{id: "reset", label: "重置模块"}], busy: false});
+  resolveSelection({data: {text: "reset"}});
+  await new Promise(resolve => setImmediate(resolve));
+  navigation.destroy();
 });
 
 test("native updates are serialized and superseded states are discarded", async () => {

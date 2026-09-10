@@ -9,23 +9,38 @@ export function inBilibili(host = window) {
 }
 
 /**
- * 直接订阅官方 SDK 的主题和键盘事件，监听器随宿主文档释放。
- * Subscribe to official SDK theme and keyboard events for the host document's lifetime.
- * @param {{theme: (value: {theme: number, night: number}) => void, keyboard: (height: number) => void}} callbacks 环境更新回调 / Environment callbacks.
+ * 订阅 common 容器的 V2 环境事件，立即同步当前主题并在退出时释放通道。
+ * Observe V2 environment events, synchronize the current theme immediately, and release channels on exit.
+ * @param {{theme: (value: {theme: number}) => void, keyboard: (height: number) => void}} callbacks 环境回调 / Environment callbacks.
  * @param {Window} [host] 宿主窗口 / Host window.
- * @returns {Promise<void>} 已完成能力查询和事件注册 / Capability checks and subscriptions completed.
+ * @returns {Promise<(() => void) | undefined>} 通道释放函数；普通浏览器不注册 / Channel cleanup; no registration in ordinary browsers.
  */
 export async function observeAppearance(callbacks, host = window) {
   if (!inBilibili(host)) return;
   const bridge = host.biliBridge;
   await bridge.initPromise;
-  const registrations = [
-    { method: "ui.observeThemeChange", data: { immediately: true }, onChangeTheme: callbacks.theme },
-    { method: "ui.observeKeyboardStatus", data: {}, onShow: ({ height }) => callbacks.keyboard(height), onHide: () => callbacks.keyboard(0), onChangeHeight: ({ height }) => callbacks.keyboard(height) },
-  ];
-  await Promise.all(registrations.map(async registration => {
-    if (await bridge.isSupport(registration.method)) bridge.callNative(registration);
-  }));
+  const theme = (result) => {
+    if (result.code !== 0) {
+      console.error('Bilibili theme channel failed', result);
+      return;
+    }
+    // 注册成功回执没有主题数据，只有状态事件才更新页面。
+    // Registration acknowledgements contain no theme; only state events update the page.
+    if (typeof result.data?.theme === 'number') callbacks.theme(result.data);
+  };
+  const keyboard = (result) => {
+    if (result.code !== 0) {
+      console.error('Bilibili keyboard channel failed', result);
+      return;
+    }
+    if (typeof result.data?.status === 'boolean') callbacks.keyboard(result.data.status ? result.data.height : 0);
+  };
+  bridge.addChannel('ui.observeThemeChange', theme, { immediately: true });
+  bridge.addChannel('ui.observeKeyboardStatus', keyboard);
+  return () => {
+    bridge.removeChannel('ui.observeThemeChange', theme);
+    bridge.removeChannel('ui.observeKeyboardStatus', keyboard);
+  };
 }
 
 /**
@@ -48,17 +63,16 @@ export async function confirmBilibili(message, host = window) {
 }
 
 /**
- * 直接调用当前容器已注册的原生 Toast，参数来自客户端实现。
- * Call the registered native Toast using the client-verified payload.
+ * 调用 common 容器的官方 LiveUI 原生提示，避免旧版 biliapp 方法。
+ * Call the official LiveUI toast in a common container instead of the legacy biliapp method.
  * @param {string} message 提示文字 / Notice text.
  * @param {Window} [host] 宿主窗口 / Host window.
- * @returns {Promise<void>} 提示已提交给客户端 / Notice dispatched to the client.
+ * @returns {Promise<void>} 提示已提交 / Notice dispatched.
  */
 export async function toastBilibili(message, host = window) {
   const bridge = host.biliBridge;
   await bridge.initPromise;
-  if (!(await bridge.isSupport("biliapp.showToast"))) throw new Error("客户端不支持原生提示");
-  bridge.callNative({ method: "biliapp.showToast", data: { title: message } });
+  await bridge.useNative('liveUI.toast', { type: 'short', msg: message });
 }
 
 /**
@@ -103,8 +117,19 @@ export class NativeNavigation {
   #click = result => {
     if (this.#destroyed) return;
     if (result.code !== 0) { this.#error(new Error(result.message)); return; }
-    const id = result.data?.id;
-    if (!this.#state.busy && this.#state.actions.some(action => action.id === id)) this.#select(id);
+    if (result.data?.id !== "biliverse.more" || this.#state.busy || !this.#state.actions.length) return;
+    const revision = this.#revision;
+    const actions = this.#state.actions;
+    const options = actions.map(action => ({ text: action.label, value: action.id }));
+    // iOS 原生选择面板用 text 字段返回选项 value；不能按显示文案猜测操作。
+    // The iOS selector returns the option value in text; never infer an action from its display label.
+    this.#bridge.useNative("liveUI.selectPanel", { title: "更多操作", options }).then(response => {
+      if (this.#destroyed || revision !== this.#revision || this.#state.busy) return;
+      const action = actions.find(item => item.id === response.data.text);
+      if (action) this.#select(action.id);
+    }).catch(error => {
+      if (!this.#destroyed && revision === this.#revision) this.#error(error);
+    });
   };
 
   /**
@@ -154,7 +179,7 @@ export class NativeNavigation {
       if (this.#destroyed || revision !== this.#revision) return;
       await this.#bridge.useNative("ui.setTitle", { title: state.title });
       if (this.#destroyed || revision !== this.#revision) return;
-      const buttons = !state.busy && state.actions.length ? [{ id: "biliverse.more", type: 3, menu: { content: state.actions.map(action => ({ id: action.id, text: action.label })) }, visible: true }] : [];
+      const buttons = !state.busy && state.actions.length ? [{ id: "biliverse.more", type: 3, visible: true }] : [];
       await this.#bridge.useNative("ui.setNavigationButton", { buttons });
     };
     this.#queue = this.#queue.then(render, render);
