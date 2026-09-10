@@ -9,23 +9,38 @@ export function inBilibili(host = window) {
 }
 
 /**
- * 直接订阅官方 SDK 的主题和键盘事件，监听器随宿主文档释放。
- * Subscribe to official SDK theme and keyboard events for the host document's lifetime.
- * @param {{theme: (value: {theme: number, night: number}) => void, keyboard: (height: number) => void}} callbacks 环境更新回调 / Environment callbacks.
+ * 订阅 common 容器的 V2 环境事件，立即同步当前主题并在退出时释放通道。
+ * Observe V2 environment events, synchronize the current theme immediately, and release channels on exit.
+ * @param {{theme: (value: {theme: number}) => void, keyboard: (height: number) => void}} callbacks 环境回调 / Environment callbacks.
  * @param {Window} [host] 宿主窗口 / Host window.
- * @returns {Promise<void>} 已完成能力查询和事件注册 / Capability checks and subscriptions completed.
+ * @returns {Promise<(() => void) | undefined>} 通道释放函数；普通浏览器不注册 / Channel cleanup; no registration in ordinary browsers.
  */
 export async function observeAppearance(callbacks, host = window) {
   if (!inBilibili(host)) return;
   const bridge = host.biliBridge;
   await bridge.initPromise;
-  const registrations = [
-    { method: "ui.observeThemeChange", data: { immediately: true }, onChangeTheme: callbacks.theme },
-    { method: "ui.observeKeyboardStatus", data: {}, onShow: ({ height }) => callbacks.keyboard(height), onHide: () => callbacks.keyboard(0), onChangeHeight: ({ height }) => callbacks.keyboard(height) },
-  ];
-  await Promise.all(registrations.map(async registration => {
-    if (await bridge.isSupport(registration.method)) bridge.callNative(registration);
-  }));
+  const theme = (result) => {
+    if (result.code !== 0) {
+      console.error('Bilibili theme channel failed', result);
+      return;
+    }
+    // 注册成功回执没有主题数据，只有状态事件才更新页面。
+    // Registration acknowledgements contain no theme; only state events update the page.
+    if (typeof result.data?.theme === 'number') callbacks.theme(result.data);
+  };
+  const keyboard = (result) => {
+    if (result.code !== 0) {
+      console.error('Bilibili keyboard channel failed', result);
+      return;
+    }
+    if (typeof result.data?.status === 'boolean') callbacks.keyboard(result.data.status ? result.data.height : 0);
+  };
+  bridge.addChannel('ui.observeThemeChange', theme, { immediately: true });
+  bridge.addChannel('ui.observeKeyboardStatus', keyboard);
+  return () => {
+    bridge.removeChannel('ui.observeThemeChange', theme);
+    bridge.removeChannel('ui.observeKeyboardStatus', keyboard);
+  };
 }
 
 /**

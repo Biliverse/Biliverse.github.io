@@ -3,15 +3,28 @@ import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toast
 
 // 本站只提供品牌、入口和配置探测；历史、动画、取消与释放由共用导航负责。
 // This site supplies branding, entries and probes; shared navigation owns history, motion and lifecycle.
-observeAppearance({
-  theme: ({ theme, night }) => {
-    const dark = theme === 2 || night === 1;
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
-    document.documentElement.classList.toggle("bili_dark", dark);
-    for (const source of document.querySelectorAll("picture source")) source.media = dark ? "all" : "not all";
-  },
-  keyboard: height => document.documentElement.style.setProperty("--pp-keyboard-height", `${height}px`),
-}).catch(error => console.error("Bilibili appearance subscription failed", error));
+/**
+ * 主页与模块共享同一主题状态，App 事件到达后以 App 为准。
+ * Share one theme state across home and modules, with app events taking precedence.
+ * @param {{theme: number}} value 主题编号 / Theme identifier.
+ * @returns {void} 已更新主题 / Theme updated.
+ */
+function updateTheme({ theme }) {
+  const dark = theme === 2;
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.documentElement.classList.toggle('bili_dark', dark);
+  for (const source of document.querySelectorAll('picture source')) source.media = dark ? 'all' : 'not all';
+}
+const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+updateTheme({ theme: systemTheme.matches ? 2 : 1 });
+if (!inBilibili()) systemTheme.addEventListener('change', (event) => updateTheme({ theme: event.matches ? 2 : 1 }));
+const appearance = observeAppearance({
+  theme: updateTheme,
+  keyboard: (height) => document.documentElement.style.setProperty('--pp-keyboard-height', `${height}px`),
+}).catch((error) => console.error('Bilibili appearance subscription failed', error));
+window.addEventListener('pagehide', (event) => {
+  if (!event.persisted) appearance.then((dispose) => dispose?.());
+});
 const exportButton = document.querySelector("#export-capabilities");
 exportButton.hidden = !inBilibili();
 exportButton.onclick = async () => {

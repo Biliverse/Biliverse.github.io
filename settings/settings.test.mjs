@@ -46,24 +46,44 @@ test("native confirmations use validated button fields and wait for a user decis
   assert.equal(await confirmed, true);
 });
 
-test("official appearance callbacks drive live theme and keyboard changes", async () => {
-  const subscriptions = new Map(), themes = [], heights = [];
-  const host = { navigator: { userAgent: "BiliApp" }, biliBridge: {
-    initPromise: Promise.resolve(), isSupport: async () => true,
-    callNative: options => subscriptions.set(options.method, options),
-  } };
-  await observeAppearance({ theme: value => themes.push(value), keyboard: height => heights.push(height) }, host);
-  const theme = subscriptions.get("ui.observeThemeChange");
+test('common V2 appearance channels request initial state, ignore acknowledgements and clean up', async () => {
+  const subscriptions = new Map();
+  const themes = [];
+  const heights = [];
+  const removed = [];
+  const host = {
+    navigator: { userAgent: 'BiliApp' },
+    biliBridge: {
+      initPromise: Promise.resolve(),
+      callNative: assert.fail,
+      addChannel: (method, callback, data) => subscriptions.set(method, { callback, data }),
+      removeChannel: (method, callback) => removed.push([method, callback]),
+    },
+  };
+  const dispose = await observeAppearance(
+    { theme: (value) => themes.push(value), keyboard: (height) => heights.push(height) },
+    host,
+  );
+  const theme = subscriptions.get('ui.observeThemeChange');
   assert.equal(theme.data.immediately, true);
-  theme.onChangeTheme({ theme: 2, night: 1 });
-  theme.onChangeTheme({ theme: 1, night: 0 });
-  assert.deepEqual(themes, [{ theme: 2, night: 1 }, { theme: 1, night: 0 }]);
-  const keyboard = subscriptions.get("ui.observeKeyboardStatus");
-  keyboard.onShow({ height: 320 });
-  keyboard.onChangeHeight({ height: 280 });
-  keyboard.onHide();
-  assert.deepEqual(heights, [320, 280, 0]);
-  await observeAppearance({ theme() { assert.fail(); }, keyboard() { assert.fail(); } }, { navigator: { userAgent: "Mozilla" } });
+  theme.callback({ code: 0 });
+  theme.callback({ code: 0, data: { theme: 2 } });
+  theme.callback({ code: 0, data: { theme: 1 } });
+  assert.deepEqual(themes, [{ theme: 2 }, { theme: 1 }]);
+  const keyboard = subscriptions.get('ui.observeKeyboardStatus');
+  keyboard.callback({ code: 0 });
+  keyboard.callback({ code: 0, data: { status: true, height: 320 } });
+  keyboard.callback({ code: 0, data: { status: false, height: 320 } });
+  assert.deepEqual(heights, [320, 0]);
+  dispose();
+  assert.deepEqual(removed, [
+    ['ui.observeThemeChange', theme.callback],
+    ['ui.observeKeyboardStatus', keyboard.callback],
+  ]);
+  assert.equal(
+    await observeAppearance({ theme: assert.fail, keyboard: assert.fail }, { navigator: { userAgent: 'Mozilla' } }),
+    undefined,
+  );
 });
 
 test("website mocks return same-build resources without requests or storage access", async () => {
