@@ -6,25 +6,10 @@ import vm from 'node:vm';
 // 预览真实发布产物；代理只使用独立内存，不导入 Enhanced 业务代码。
 // Preview the real deployment artifacts with isolated storage, without importing Enhanced business code.
 const publicDir = path.resolve(import.meta.dirname, '../docs/public');
-// override 仅从开发检出读取，正式构建从不加载测试资源。
-// Overrides read only from development checkouts; production builds never load fixtures.
-const overrides = process.argv.includes('--override-official')
-  ? await (
-      await import(
-        path.resolve(import.meta.dirname, '../../../NSNanoCat/PreferencePanes/examples/official-overrides.mjs')
-      )
-    ).loadOfficialOverrides()
-  : null;
 const store = new Map();
 const server = http.createServer(async (request, reply) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
-    const fixture = overrides?.asset(url.pathname);
-    if (fixture && ['GET', 'HEAD'].includes(request.method)) {
-      reply.writeHead(200, { 'Content-Type': 'text/css', 'Cache-Control': 'no-store' });
-      reply.end(request.method === 'HEAD' ? '' : fixture);
-      return;
-    }
     if (url.pathname === '/') {
       reply.writeHead(302, { Location: '/settings/' });
       reply.end();
@@ -70,7 +55,6 @@ const server = http.createServer(async (request, reply) => {
           clearTimeout,
         }),
       );
-      if (overrides && result && url.pathname.startsWith('/settings/')) result.body = overrides.rewrite(result.body);
       reply.writeHead(result?.status ?? 404, result?.headers);
       reply.end(result?.body);
       return;
@@ -93,12 +77,11 @@ const server = http.createServer(async (request, reply) => {
           '.json': 'application/json',
           '.png': 'image/png',
         }[path.extname(target)] ?? 'text/plain';
-      // 本站资源始终来自当前检出；官方资源仅在显式测试模式下替换。
-      // Site resources always use the current checkout; official resources need an explicit test override.
-      const local = mime.startsWith('text/')
+      // 本站资源始终来自当前检出，正式与预览环境都直接引用官方依赖。
+      // Site resources always use the current checkout; both production and preview use official dependencies directly.
+      const output = mime.startsWith('text/')
         ? body.toString().replaceAll('https://biliverse.github.io/settings/theme.css', '/settings/theme.css')
         : body;
-      const output = overrides && typeof local === 'string' ? overrides.rewrite(local) : local;
       reply.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-store' });
       reply.end(request.method === 'HEAD' ? undefined : output);
     } catch (error) {

@@ -50,8 +50,6 @@ body {
   width: 64px;
   height: 64px;
   margin: 24px auto;
-}
-.brand-logo {
   object-fit: contain;
 }
 .self-item .logo img {

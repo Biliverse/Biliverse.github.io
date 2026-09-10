@@ -14,7 +14,7 @@ Swift 字段元数据确认导航按钮为 {id,type,content?,url?,badge?,menu?,v
 
 按用户修正，0.9.1 不再把 App 内置 CSS 打包进面板脚本，也不在网站/npm/Release 提供镜像或样式 ZIP。正式页面通过 CSS import 引用官方 Hilo 地址；模块中自有页面的 Mock 也只引用官方 URL，不拦截或代替 Hilo 资源。SDK 继续使用 s1.hdslb.com 官方地址。
 
-本机 App 提取的文件仅放在 PreferencePanes 的 test/fixtures/official-styles，使用 --override-official 显式开启本地预览 override；不带参数时不启用，构建和发布不读取 fixtures。普通公网浏览器无法加载 App 内置资源时不提供兜底，这符合仅要求 App 内正常工作的目标。
+本机 App 提取文件曾用于核对内置样式，当前仓库和 PreferencePanes 均不再保留镜像或 override。正式构建与本地预览都直接引用官方地址；普通公网浏览器无法加载 App 内置资源时不提供兜底，这符合仅要求 App 内正常工作的目标。
 
 客户端能力复制入口保留，它只导出 SDK 版本与 V1/V2 方法清单，不导出 App 内置资源或持久化数据。之前 0.9.0 的公开镜像方案已撤销。
 
