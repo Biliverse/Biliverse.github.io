@@ -104,13 +104,3 @@ button.self-item {
 	background: #fff;
 	padding: 12px;
 }
-
-/* 原生栏不提供菜单时，用公共菜单组件显示模块操作；不另造标题栏。
- * Hosts without native menus display module actions through the shared component, without a second title bar. */
-#module-actions {
-	position: fixed;
-	top: 8px;
-	right: 12px;
-	z-index: 4;
-	color: var(--biliverse-accent);
-}
