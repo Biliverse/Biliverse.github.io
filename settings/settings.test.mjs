@@ -8,13 +8,18 @@ import { once } from "node:events";
 import vm from "node:vm";
 import { inBilibili, NativeNavigation, observeAppearance, confirmBilibili, toastBilibili, exportCapabilities } from "./bilibili.mjs";
 
-test("native Toast uses the client title payload and does not wait for a nonexistent callback", async () => {
+test('common LiveUI Toast uses the native message payload', async () => {
   let call;
-  const host = { biliBridge: { initPromise: Promise.resolve(), isSupport: async name => name === "biliapp.showToast", callNative: request => { call = request; } } };
-  await toastBilibili("修改成功", host);
-  assert.deepEqual(call, { method: "biliapp.showToast", data: { title: "修改成功" } });
-  host.biliBridge.isSupport = async () => false;
-  await assert.rejects(toastBilibili("失败", host), /不支持/);
+  const host = {
+    biliBridge: {
+      initPromise: Promise.resolve(),
+      useNative: async (...args) => {
+        call = args;
+      },
+    },
+  };
+  await toastBilibili('修改成功', host);
+  assert.deepEqual(call, ['liveUI.toast', { type: 'short', msg: '修改成功' }]);
 });
 
 test("capability export contains method lists without user or storage data", async () => {

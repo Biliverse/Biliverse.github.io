@@ -63,17 +63,16 @@ export async function confirmBilibili(message, host = window) {
 }
 
 /**
- * 直接调用当前容器已注册的原生 Toast，参数来自客户端实现。
- * Call the registered native Toast using the client-verified payload.
+ * 调用 common 容器的官方 LiveUI 原生提示，避免旧版 biliapp 方法。
+ * Call the official LiveUI toast in a common container instead of the legacy biliapp method.
  * @param {string} message 提示文字 / Notice text.
  * @param {Window} [host] 宿主窗口 / Host window.
- * @returns {Promise<void>} 提示已提交给客户端 / Notice dispatched to the client.
+ * @returns {Promise<void>} 提示已提交 / Notice dispatched.
  */
 export async function toastBilibili(message, host = window) {
   const bridge = host.biliBridge;
   await bridge.initPromise;
-  if (!(await bridge.isSupport("biliapp.showToast"))) throw new Error("客户端不支持原生提示");
-  bridge.callNative({ method: "biliapp.showToast", data: { title: message } });
+  await bridge.useNative('liveUI.toast', { type: 'short', msg: message });
 }
 
 /**
