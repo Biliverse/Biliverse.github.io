@@ -1,16 +1,16 @@
-import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { rollup } from 'rollup';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import { rollup } from 'rollup';
 
 const root = path.resolve(import.meta.dirname, '..');
 const check = process.argv.includes('--check');
 const stamp = process.argv.includes('--stamp');
-// 网站只部署声明式主页及其素材，不保存运行脚本或业务配置。
-// Deploy only the declarative landing page and its assets, without runtime scripts or business configuration.
+// 网站部署项目主页、主页脚本及其素材，不保存通用面板或业务配置。
+// Deploy the project landing page, its page script and materials, without the generic panel or business configuration.
 const outputs = new Map();
-for (const name of ['index.html', 'theme.css'])
+for (const name of ['index.html', 'index.mjs', 'theme.css'])
   outputs.set(`settings/${name}`, await readFile(path.join(root, 'settings', name)));
 for (const record of JSON.parse(await readFile(path.join(root, 'settings/icons-manifest.json'), 'utf8')))
   for (const source of record.outputs)

@@ -3,18 +3,19 @@ import { access, readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 
-test('the landing page is declarative and delegates behavior to PreferencePanes', async () => {
+test('the landing page loads the official SDK and one project-owned page script', async () => {
   const html = await readFile(new URL('index.html', import.meta.url), 'utf8');
   assert.equal((html.match(/data-module=/g) ?? []).length, 4);
   for (const attribute of ['data-page=', 'data-json=', 'data-css=', 'data-module-status'])
     assert.equal((html.match(new RegExp(attribute, 'g')) ?? []).length, 4);
   assert.match(html, /s1\.hdslb\.com\/bfs\/seed\/jinkela\/short\/jsb\/js-bridge\.min\.js/);
   assert.match(html, /s1\.hdslb\.com\/bfs\/static\/2233-monorepo\/customer-service-h5\/static\/css/);
-  assert.match(html, /src="\/settings\/assets\/host\.mjs"/);
+  assert.match(html, /src="\/settings\/index\.mjs"/);
+  assert.doesNotMatch(html, /src="\/settings\/assets\/host\.mjs"/);
   assert.doesNotMatch(html, /home\.js|bilibili\.mjs|navigation\.mjs|export-capabilities|navigation-error/);
 });
 
-test('website output contains only landing material and no PreferencePanes runtime', async () => {
+test('website output contains its page script and no PreferencePanes runtime', async () => {
   const assets = await readdir(new URL('../docs/public/settings/assets/', import.meta.url));
   for (const file of ['host.mjs', 'app.mjs', 'navigation.mjs', 'bilibili.mjs'])
     assert.equal(assets.includes(file), false);
@@ -24,9 +25,14 @@ test('website output contains only landing material and no PreferencePanes runti
     await readFile(new URL('../docs/public/settings/index.html', import.meta.url)),
     await readFile(new URL('index.html', import.meta.url)),
   );
+  const page = await readFile(new URL('../docs/public/settings/index.mjs', import.meta.url), 'utf8');
+  assert.match(page, /window\.biliBridge/);
+  assert.match(page, /ui\.observeThemeChange/);
+  assert.match(page, /from ['"]\/settings\/assets\/navigation\.mjs['"]/);
+  assert.doesNotMatch(page, /BilibiliHost|host\.mjs/);
 });
 
-test('static mock serves only same-build HTML and image material', async () => {
+test('static mock serves only same-build project page resources', async () => {
   const source = await readFile(new URL('../docs/public/settings/mock.js', import.meta.url), 'utf8');
   const png = await readFile(new URL('icons/Enhanced_subject.png', import.meta.url));
   const result = await new Promise((resolve) =>
@@ -40,7 +46,24 @@ test('static mock serves only same-build HTML and image material', async () => {
     }),
   );
   assert.deepEqual(Buffer.from(result.bodyBytes), png);
-  for (const pathname of ['/settings/assets/host.mjs', '/settings/Enhanced', '/configs/Enhanced', '/api/get']) {
+  const script = await new Promise((resolve) =>
+    vm.runInNewContext(source, {
+      $request: { url: 'https://app.bilibili.com/settings/index.mjs', method: 'GET' },
+      $task: {},
+      $done: resolve,
+      console: { log() {}, error() {} },
+      ArrayBuffer,
+      Uint8Array,
+    }),
+  );
+  assert.match(script.body, /window\.biliBridge/);
+  for (const pathname of [
+    '/settings/assets/host.mjs',
+    '/settings/assets/navigation.mjs',
+    '/settings/Enhanced',
+    '/configs/Enhanced',
+    '/api/get',
+  ]) {
     const missing = await new Promise((resolve) =>
       vm.runInNewContext(source, {
         $request: { url: `https://app.bilibili.com${pathname}`, method: 'GET' },
