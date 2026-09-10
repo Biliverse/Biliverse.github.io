@@ -8,7 +8,9 @@
 
 startPicker（0x110460d5c）读取 mode/ratiox/ratioy/maxsize，返回 data:image/ipeg;base64 图片内容；它不是设置选项选择器。日期选择器也不替代分类单选或二级多选。
 
-Swift 字段元数据确认导航按钮为 {id,type,content?,url?,badge?,menu?,visible?}，menu.content 是 {id,text} 数组；选择事件返回 id。CommonButtonType 的 RawRepresentable 实现（0x104c307e0/0x104c307fc）以 0..6 映射 text/icon/share/more/help/notice/calendar，“更多”为整数 3。Biliverse 已使用官方文字标题和 MORE 菜单，模块图标位于固定搜索栏左侧；`liveUI.selectPanel` 的真机表现为滚轮选择器，因此不再承担导航菜单。
+Swift 字段元数据确认导航按钮模型包含 `{id,type,content?,url?,badge?,menu?,visible?}`，`CommonButtonType` 的 RawRepresentable 实现（0x104c307e0/0x104c307fc）以 0..6 映射 text/icon/share/more/help/notice/calendar，“更多”为整数 3。但当前 common WebView 的执行路径只把顶层 `CommonButton.id` 通过 `ui.observeNavigationClick` 返回；真机也确认 `menu.content` 不会弹出原生菜单。“我的钱包”的三点菜单由原生 `BBPhoneMineWalletViewControllerV2` 自己实现，不是可复用的 Bridge 控件。
+
+Biliverse 因此只用 `ui.setNavigationButton` 创建官方 MORE 按钮。收到顶层 `biliverse.more` 事件后，宿主调用 PreferencePanes `ActionMenu.open()` 展示通用底部操作菜单；菜单项继续由 `ModuleFrame.state.actions` 提供，选择后交给 `ModuleFrame.perform(id)`。`liveUI.selectPanel` 的真机表现是滚轮选择器，不承担操作菜单。
 
 ## 2026-09-10：正式环境只使用官方内置资源地址
 
