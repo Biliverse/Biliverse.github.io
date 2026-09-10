@@ -76,7 +76,7 @@ export async function exportCapabilities(host = window) {
         await bridge.initPromise;
         const v1 = await new Promise(resolve => bridge.callNative({ method: "global.getAllSupport", callback: resolve }));
         const v2 = bridge.isBiliInjectV2() ? await bridge.useNative("global.getAllSupport") : null;
-        const content = JSON.stringify({ sdk: bridge.jsbVersion, v1, v2: v2?.data ?? null }, null, 2);
+        const content = JSON.stringify({ sdk: bridge.jsbVersion, container: { common: bridge.isWbTypeCommon }, v1, v2: v2?.data ?? null }, null, 2);
         if (!(await bridge.isSupport("ability.copyToClipboard"))) throw new Error("客户端不支持复制能力清单");
         if (expired) return;
         await new Promise((resolve, reject) => bridge.callNative({ method: "ability.copyToClipboard", data: { content }, callback: result => result?.code === 0 ? resolve() : reject(new Error("复制失败")) }));
@@ -129,24 +129,16 @@ export class NativeNavigation {
   async #connect() {
     await this.#bridge.initPromise;
     if (this.#destroyed) return;
-    this.#bridge.callNative({ method: "ui.showNavigation" });
-    this.#bridge.callNative({ method: "ui.setTitle", data: { title: "Biliverse" } });
-    // V2 UI 方法还要求 common 容器；方法清单不等同于当前容器可调用。
-    // V2 UI methods also require a common container; the method list alone is insufficient.
-    if (!this.#bridge.isWbTypeCommon) return;
-    const supported = await Promise.all(["ui.setNavigationButton", "ui.observeNavigationClick"].map(method => this.#bridge.canIUse(method)));
-    if (!supported.every(Boolean)) return;
+    // 入口负责选择 common 容器；禁止用 UA 伪装或网页菜单掩盖错误入口。
+    // The entry selects the common container; never disguise another container via UA or web menus.
+    if (!this.#bridge.isWbTypeCommon) throw new Error("请更新 Enhanced，并从我的页面重新进入 Biliverse（common 容器）");
+    const supported = await Promise.all(["ui.setNavigationHide", "ui.setTitle", "ui.setNavigationButton", "ui.observeNavigationClick"].map(method => this.#bridge.canIUse(method)));
+    if (!supported.every(Boolean)) throw new Error("common 容器未提供所需导航能力");
+    await this.#bridge.useNative("ui.setNavigationHide", { hide: false });
     if (this.#destroyed) return;
     this.#bridge.addChannel("ui.observeNavigationClick", this.#click);
     this.#subscribed = true;
   }
-
-  /**
-   * 当前容器是否可用原生菜单；不影响原生标题和返回。
-   * Whether native menus are available, independently of native titles and back navigation.
-   * @returns {boolean} 菜单能力 / Menu capability.
-   */
-  get menuSupported() { return this.#subscribed; }
 
   /**
    * 串行同步标题和菜单，跳过尚未发送的过期状态。
@@ -160,8 +152,8 @@ export class NativeNavigation {
     const render = async () => {
       await this.#ready;
       if (this.#destroyed || revision !== this.#revision) return;
-      this.#bridge.callNative({ method: "ui.setTitle", data: { title: state.title } });
-      if (!this.#subscribed) return;
+      await this.#bridge.useNative("ui.setTitle", { title: state.title });
+      if (this.#destroyed || revision !== this.#revision) return;
       const buttons = !state.busy && state.actions.length ? [{ id: "biliverse.more", type: 3, menu: { content: state.actions.map(action => ({ id: action.id, text: action.label })) }, visible: true }] : [];
       await this.#bridge.useNative("ui.setNavigationButton", { buttons });
     };

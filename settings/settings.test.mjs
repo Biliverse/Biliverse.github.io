@@ -20,7 +20,7 @@ test("native Toast uses the client title payload and does not wait for a nonexis
 test("capability export contains method lists without user or storage data", async () => {
   let copied;
   const host = { biliBridge: {
-    jsbVersion: "3.3.5", initPromise: Promise.resolve(), isSupport: async () => true, isBiliInjectV2: () => true,
+    jsbVersion: "3.3.5", isWbTypeCommon: true, initPromise: Promise.resolve(), isSupport: async () => true, isBiliInjectV2: () => true,
     useNative: async () => ({ data: { methods: ["ui.setNavigationButton"] } }),
     callNative: options => {
       if (options.method === "global.getAllSupport") options.callback(["global.closeBrowser"]);
@@ -28,7 +28,7 @@ test("capability export contains method lists without user or storage data", asy
     },
   } };
   await exportCapabilities(host);
-  assert.deepEqual(copied, { sdk: "3.3.5", v1: ["global.closeBrowser"], v2: { methods: ["ui.setNavigationButton"] } });
+  assert.deepEqual(copied, { sdk: "3.3.5", container: { common: true }, v1: ["global.closeBrowser"], v2: { methods: ["ui.setNavigationButton"] } });
 });
 
 test("native confirmations use validated button fields and wait for a user decision", async () => {
@@ -97,7 +97,7 @@ test("native navigation uses official titles and built-in more menus; only activ
   let listener, removed;
   const bridge = {
     inBiliApp: true, isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
-    callNative: request => calls.push(request),
+    callNative: assert.fail,
     useNative: async (method, data) => calls.push({ method, data }),
     addChannel: (name, callback) => { assert.equal(name, "ui.observeNavigationClick"); listener = callback; },
     removeChannel: (name, callback) => { removed = [name, callback]; },
@@ -107,7 +107,7 @@ test("native navigation uses official titles and built-in more menus; only activ
   const navigation = new NativeNavigation(id => selected.push(id), error => errors.push(error), { biliBridge: bridge });
   const actions = [{ id: "viewCaches", label: "查看缓存" }, { id: "reset", label: "重置模块" }];
   await navigation.update({ title: "Enhanced", actions, busy: false });
-  assert.equal(calls[0].method, "ui.showNavigation");
+  assert.deepEqual(calls[0], { method: "ui.setNavigationHide", data: { hide: false } });
   assert.deepEqual(calls.at(-2), { method: "ui.setTitle", data: { title: "Enhanced" } });
   assert.deepEqual(calls.at(-1), { method: "ui.setNavigationButton", data: { buttons: [{
     id: "biliverse.more", type: 3, menu: { content: [{ id: "viewCaches", text: "查看缓存" }, { id: "reset", text: "重置模块" }] }, visible: true,
@@ -134,7 +134,7 @@ test("native updates are serialized and superseded states are discarded", async 
   const bridge = {
     isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
     callNative() {}, addChannel() {}, removeChannel() {},
-    useNative: (method, data) => { calls.push(data); return new Promise(resolve => { complete = resolve; }); },
+    useNative: (method, data) => { if (method !== "ui.setNavigationButton") return Promise.resolve(); calls.push(data); return new Promise(resolve => { complete = resolve; }); },
   };
   const navigation = new NativeNavigation(() => {}, assert.fail, { biliBridge: bridge });
   const first = navigation.update({ title: "Module", actions: [{ id: "reset", label: "Reset" }], busy: false });
@@ -154,13 +154,31 @@ test("native updates are serialized and superseded states are discarded", async 
   assert.equal(calls.length, 2);
 });
 
-test("legacy containers retain native titles without calling common-only menu methods", async () => {
-  const calls = [];
-  const bridge = { isWbTypeCommon: false, initPromise: Promise.resolve(), canIUse: assert.fail, useNative: assert.fail, callNative: request => calls.push(request), addChannel: assert.fail };
+test("a delayed V2 title response cannot install a superseded menu", async () => {
+  const menus = [];
+  let finishTitle;
+  const bridge = {
+    isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
+    callNative: assert.fail, addChannel() {}, removeChannel() {},
+    useNative: async (method, data) => {
+      if (method === "ui.setTitle" && data.title === "First") await new Promise(resolve => { finishTitle = resolve; });
+      if (method === "ui.setNavigationButton") menus.push(data);
+    },
+  };
   const navigation = new NativeNavigation(assert.fail, assert.fail, { biliBridge: bridge });
-  await navigation.update({ title: "Enhanced", actions: [{id: "reset", label: "Reset"}], busy: false });
-  assert.equal(navigation.menuSupported, false);
-  assert.deepEqual(calls.at(-1), { method: "ui.setTitle", data: { title: "Enhanced" } });
+  const first = navigation.update({ title: "First", actions: [{id: "reset", label: "Reset"}], busy: false });
+  await new Promise(resolve => setImmediate(resolve));
+  const next = navigation.update({ title: "Biliverse", actions: [], busy: false });
+  finishTitle();
+  await Promise.all([first, next]);
+  assert.deepEqual(menus, [{ buttons: [] }]);
+  navigation.destroy();
+});
+
+test("a non-common entry fails explicitly without using legacy navigation or web menus", async () => {
+  const bridge = { isWbTypeCommon: false, initPromise: Promise.resolve(), canIUse: assert.fail, useNative: assert.fail, callNative: assert.fail, addChannel: assert.fail };
+  const navigation = new NativeNavigation(assert.fail, assert.fail, { biliBridge: bridge });
+  await assert.rejects(navigation.update({ title: "Enhanced", actions: [{id: "reset", label: "Reset"}], busy: false }), /common 容器/);
   navigation.destroy();
 });
 
@@ -220,7 +238,7 @@ test("website deploys only generic frontend assets and owns the custom landing p
   assert.match(html, /class="brand-logo"/);
   for (const file of ["home.css", "theme.css"]) assert.ok(html.includes(`href="https://biliverse.github.io/settings/${file}?`));
   assert.ok(script.includes('"X-PreferencePanes-CSS": "https://biliverse.github.io/settings/theme.css?'));
-  assert.doesNotMatch(html + script, /app-navbar|homeBack|IntersectionObserver|closeBilibili/);
+  assert.doesNotMatch(html + script, /app-navbar|homeBack|IntersectionObserver|closeBilibili|ActionMenu|module-actions/);
   assert.doesNotMatch(script, /\/api\/|mount\(|srcdoc|DOMParser|\.replace\(|pushState|\.animate\(/);
   assert.match(script, /new ModuleStatus/);
   assert.match(script, /ModuleFrame/);
