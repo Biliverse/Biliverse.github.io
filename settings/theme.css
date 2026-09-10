@@ -2,6 +2,7 @@
  * Share the Biliverse accent between the landing page and CSS-imported module pages. */
 :root {
   --biliverse-accent: var(--brand_pink, #ff6699);
+  --pp-accent: var(--biliverse-accent);
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -11,25 +12,6 @@
 }
 .pp-panel {
   --pp-accent: var(--biliverse-accent);
-}
-.pp-panel[data-module="Enhanced"] {
-  --biliverse-module-logo: url("/settings/assets/Enhanced_subject.png");
-}
-.pp-panel[data-module="Global"] {
-  --biliverse-module-logo: url("/settings/assets/Global_subject.png");
-}
-.pp-panel[data-module="Redirect"] {
-  --biliverse-module-logo: url("/settings/assets/Redirect_subject.png");
-}
-.pp-panel[data-module="ADBlock"] {
-  --biliverse-module-logo: url("/settings/assets/ADBlock_subject.png");
-}
-/* 未提供 BoxJS icon 的字段数组由项目主题补充正文图标，通用包不绑定品牌。
- * The project theme supplies content icons for field arrays without BoxJS icon metadata. */
-.pp-panel:is([data-module="Enhanced"], [data-module="Global"], [data-module="Redirect"], [data-module="ADBlock"])
-  .pp-module-logo:empty {
-  display: block;
-  background: var(--biliverse-module-logo) center / contain no-repeat;
 }
 .pp-panel .pp-header,
 .pp-panel .pp-back {
@@ -50,8 +32,6 @@ body {
   width: 64px;
   height: 64px;
   margin: 24px auto;
-}
-.brand-logo {
   object-fit: contain;
 }
 .self-item .logo img {

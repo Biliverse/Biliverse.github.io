@@ -28,7 +28,9 @@ test('website output contains its page script and no PreferencePanes runtime', a
   const page = await readFile(new URL('../docs/public/settings/index.mjs', import.meta.url), 'utf8');
   assert.match(page, /window\.biliBridge/);
   assert.match(page, /ui\.observeThemeChange/);
-  assert.match(page, /menu: \{ content:/);
+  assert.match(page, /new ActionMenu/);
+  assert.match(page, /result\.data\?\.id === ['"]biliverse\.more['"]\) menu\.open\(\)/);
+  assert.doesNotMatch(page, /menu: \{ content:/);
   assert.match(page, /ui\.observeNavigationClick/);
   assert.doesNotMatch(page, /liveUI\.selectPanel/);
   assert.match(page, /from ['"]\/settings\/assets\/navigation\.mjs['"]/);

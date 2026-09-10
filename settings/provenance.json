@@ -1,7 +1,0 @@
-{
-  "client": "com.bilibili.inter 6.4.0 (91000200)",
-  "h5": "1.1.2",
-  "sourceFile": "messageSettingsLayout-ltzQ1gMi.css",
-  "sourceSHA256": "285755bdcb1dab728afac325a19b048ed91e05c37f20ec2155d4ca24fdb58a4a",
-  "adaptation": "Only form-group, form-row, v-toggle rules; Vue scope selectors removed. JS implemented locally to connect Biliverse settings."
-}

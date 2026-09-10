@@ -8,13 +8,15 @@
 
 startPicker（0x110460d5c）读取 mode/ratiox/ratioy/maxsize，返回 data:image/ipeg;base64 图片内容；它不是设置选项选择器。日期选择器也不替代分类单选或二级多选。
 
-Swift 字段元数据确认导航按钮为 {id,type,content?,url?,badge?,menu?,visible?}，menu.content 是 {id,text} 数组；选择事件返回 id。CommonButtonType 的 RawRepresentable 实现（0x104c307e0/0x104c307fc）以 0..6 映射 text/icon/share/more/help/notice/calendar，“更多”为整数 3。Biliverse 已使用官方文字标题和 MORE 菜单，模块图标位于固定搜索栏左侧；`liveUI.selectPanel` 的真机表现为滚轮选择器，因此不再承担导航菜单。
+Swift 字段元数据确认导航按钮模型包含 `{id,type,content?,url?,badge?,menu?,visible?}`，`CommonButtonType` 的 RawRepresentable 实现（0x104c307e0/0x104c307fc）以 0..6 映射 text/icon/share/more/help/notice/calendar，“更多”为整数 3。但当前 common WebView 的执行路径只把顶层 `CommonButton.id` 通过 `ui.observeNavigationClick` 返回；真机也确认 `menu.content` 不会弹出原生菜单。“我的钱包”的三点菜单由原生 `BBPhoneMineWalletViewControllerV2` 自己实现，不是可复用的 Bridge 控件。
+
+Biliverse 因此只用 `ui.setNavigationButton` 创建官方 MORE 按钮。收到顶层 `biliverse.more` 事件后，宿主调用 PreferencePanes `ActionMenu.open()` 展示通用底部操作菜单；菜单项继续由 `ModuleFrame.state.actions` 提供，选择后交给 `ModuleFrame.perform(id)`。`liveUI.selectPanel` 的真机表现是滚轮选择器，不承担操作菜单。
 
 ## 2026-09-10：正式环境只使用官方内置资源地址
 
 按用户修正，0.9.1 不再把 App 内置 CSS 打包进面板脚本，也不在网站/npm/Release 提供镜像或样式 ZIP。正式页面通过 CSS import 引用官方 Hilo 地址；模块中自有页面的 Mock 也只引用官方 URL，不拦截或代替 Hilo 资源。SDK 继续使用 s1.hdslb.com 官方地址。
 
-本机 App 提取的文件仅放在 PreferencePanes 的 test/fixtures/official-styles，使用 --override-official 显式开启本地预览 override；不带参数时不启用，构建和发布不读取 fixtures。普通公网浏览器无法加载 App 内置资源时不提供兜底，这符合仅要求 App 内正常工作的目标。
+本机 App 提取文件曾用于核对内置样式，当前仓库和 PreferencePanes 均不再保留镜像或 override。正式构建与本地预览都直接引用官方地址；普通公网浏览器无法加载 App 内置资源时不提供兜底，这符合仅要求 App 内正常工作的目标。
 
 客户端能力复制入口保留，它只导出 SDK 版本与 V1/V2 方法清单，不导出 App 内置资源或持久化数据。之前 0.9.0 的公开镜像方案已撤销。
 
