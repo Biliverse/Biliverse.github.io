@@ -117,40 +117,58 @@ test("website mocks return same-build resources without requests or storage acce
   }
 });
 
-test("native navigation uses official titles and built-in more menus; only active actions dispatch", async () => {
+test("native more button opens the bottom selector and dispatches its returned value", async () => {
   const calls = [], selected = [], errors = [];
   let listener, removed;
   const bridge = {
     inBiliApp: true, isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
     callNative: assert.fail,
-    useNative: async (method, data) => calls.push({ method, data }),
+    useNative: async (method, data) => {
+      calls.push({ method, data });
+      return { data: { text: "viewCaches" } };
+    },
     addChannel: (name, callback) => { assert.equal(name, "ui.observeNavigationClick"); listener = callback; },
     removeChannel: (name, callback) => { removed = [name, callback]; },
   };
   assert.equal(inBilibili({ biliBridge: bridge }), true);
-  assert.equal(inBilibili({ navigator: { userAgent: "Mozilla" } }), false);
   const navigation = new NativeNavigation(id => selected.push(id), error => errors.push(error), { biliBridge: bridge });
   const actions = [{ id: "viewCaches", label: "查看缓存" }, { id: "reset", label: "重置模块" }];
   await navigation.update({ title: "Enhanced", actions, busy: false });
   assert.deepEqual(calls[0], { method: "ui.setNavigationHide", data: { hide: false } });
-  assert.deepEqual(calls.at(-2), { method: "ui.setTitle", data: { title: "Enhanced" } });
-  assert.deepEqual(calls.at(-1), { method: "ui.setNavigationButton", data: { buttons: [{
-    id: "biliverse.more", type: 3, menu: { content: [{ id: "viewCaches", text: "查看缓存" }, { id: "reset", text: "重置模块" }] }, visible: true,
-  }] } });
+  assert.deepEqual(calls.at(-1), { method: "ui.setNavigationButton", data: { buttons: [{id: "biliverse.more", type: 3, visible: true}] } });
   listener({ code: 0 });
-  listener({ code: 0, data: { id: "unknown" } });
   listener({ code: 0, data: { id: "viewCaches" } });
+  assert.deepEqual(selected, []);
+  listener({ code: 0, data: { id: "biliverse.more" } });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls.at(-1), { method: "liveUI.selectPanel", data: {title: "更多操作", options: [{text: "查看缓存", value: "viewCaches"}, {text: "重置模块", value: "reset"}]} });
+  assert.deepEqual(selected, ["viewCaches"]);
   const saving = navigation.update({ title: "Enhanced", actions, busy: true });
-  listener({ code: 0, data: { id: "reset" } });
+  listener({ code: 0, data: { id: "biliverse.more" } });
   await saving;
   assert.deepEqual(calls.at(-1).data, { buttons: [] });
   await navigation.update({ title: "Biliverse", actions: [], busy: false });
-  listener({ code: 0, data: { id: "reset" } });
+  listener({ code: 0, data: { id: "biliverse.more" } });
   listener({ code: 103, message: "channel unavailable" });
   assert.equal(errors[0].message, "channel unavailable");
   navigation.destroy();
   assert.deepEqual(removed, ["ui.observeNavigationClick", listener]);
-  assert.deepEqual(selected, ["viewCaches"]);
+});
+
+test("a selector result cannot run an action after the module has changed", async () => {
+  let listener, resolveSelection;
+  const bridge = {
+    isWbTypeCommon: true, initPromise: Promise.resolve(), canIUse: async () => true,
+    addChannel: (_, callback) => { listener = callback; }, removeChannel() {},
+    useNative: async method => method === "liveUI.selectPanel" ? new Promise(resolve => { resolveSelection = resolve; }) : undefined,
+  };
+  const navigation = new NativeNavigation(assert.fail, assert.fail, {biliBridge: bridge});
+  await navigation.update({title: "Enhanced", actions: [{id: "reset", label: "重置模块"}], busy: false});
+  listener({code: 0, data: {id: "biliverse.more"}});
+  await navigation.update({title: "Global", actions: [{id: "reset", label: "重置模块"}], busy: false});
+  resolveSelection({data: {text: "reset"}});
+  await new Promise(resolve => setImmediate(resolve));
+  navigation.destroy();
 });
 
 test("native updates are serialized and superseded states are discarded", async () => {

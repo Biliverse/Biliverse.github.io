@@ -117,8 +117,19 @@ export class NativeNavigation {
   #click = result => {
     if (this.#destroyed) return;
     if (result.code !== 0) { this.#error(new Error(result.message)); return; }
-    const id = result.data?.id;
-    if (!this.#state.busy && this.#state.actions.some(action => action.id === id)) this.#select(id);
+    if (result.data?.id !== "biliverse.more" || this.#state.busy || !this.#state.actions.length) return;
+    const revision = this.#revision;
+    const actions = this.#state.actions;
+    const options = actions.map(action => ({ text: action.label, value: action.id }));
+    // iOS 原生选择面板用 text 字段返回选项 value；不能按显示文案猜测操作。
+    // The iOS selector returns the option value in text; never infer an action from its display label.
+    this.#bridge.useNative("liveUI.selectPanel", { title: "更多操作", options }).then(response => {
+      if (this.#destroyed || revision !== this.#revision || this.#state.busy) return;
+      const action = actions.find(item => item.id === response.data.text);
+      if (action) this.#select(action.id);
+    }).catch(error => {
+      if (!this.#destroyed && revision === this.#revision) this.#error(error);
+    });
   };
 
   /**
@@ -168,7 +179,7 @@ export class NativeNavigation {
       if (this.#destroyed || revision !== this.#revision) return;
       await this.#bridge.useNative("ui.setTitle", { title: state.title });
       if (this.#destroyed || revision !== this.#revision) return;
-      const buttons = !state.busy && state.actions.length ? [{ id: "biliverse.more", type: 3, menu: { content: state.actions.map(action => ({ id: action.id, text: action.label })) }, visible: true }] : [];
+      const buttons = !state.busy && state.actions.length ? [{ id: "biliverse.more", type: 3, visible: true }] : [];
       await this.#bridge.useNative("ui.setNavigationButton", { buttons });
     };
     this.#queue = this.#queue.then(render, render);
