@@ -22,5 +22,8 @@ Android 6.2.6 / 9060400 的 DEX 中另有 `bilibili://web/general/main` 和 `bil
 - 入口负责选择容器；页面通过官方 SDK 的 `isWbTypeCommon` 检查实际容器，禁止伪造该标记。
 - 导航使用 V2 `ui.setNavigationHide`、`ui.setTitle`、`ui.setNavigationButton`，菜单点击使用 `ui.observeNavigationClick` 通道。
 - 非 common 入口明确提示更新 Enhanced 并重新从“我的”进入，不静默切换成网页菜单。
-- “复制客户端能力”导出 `container.common`。更新 Enhanced 后应关闭旧 WebView，从新入口打开，再核对该值为 `true`、原生标题/菜单及返回行为。
-- 入口编码、去重和导航协议已由本地测试覆盖。当前工具未能启动本机 iOS App，用户 iPhone 的实际容器结果仍需以这项导出与交互验证为准。
+- 用户于 2026-09-10 提供了 SDK 3.3.5、`container.common: true` 的真机导出，已确认入口选择成功；导出包含 100 个 V1 和 311 个 V2 方法。
+- 三点按钮的点击 ID 与维护操作 ID 分开处理：通过 `liveUI.selectPanel` 打开原生底部面板，`data.text` 返回选项 value。提示使用 `liveUI.toast` 的 short 模式。
+- 入口编码、去重、导航协议、异步选择保护与固定搜索由测试覆盖；新的主题事件、原生面板和提示最终外观仍需真机复测。
+
+完整接口说明、`/tmp` 研究材料的核对结果及原始能力导出已归档到 [Biliverse/API](https://github.com/Biliverse/API/blob/main/reports/common-webview-settings-2026-09-10.md)。Apifox 的 Bilibili 项目（8774015）中，调研文档 ID 为 9430864，JSBridge 接口文档 ID 为 9430865。
