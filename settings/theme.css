@@ -13,16 +13,16 @@
   --pp-accent: var(--biliverse-accent);
 }
 .pp-panel[data-module="Enhanced"] {
-  --biliverse-module-logo: url("/settings/assets/Enhanced_subject_light.png");
+  --biliverse-module-logo: url("/settings/assets/Enhanced_subject.png");
 }
 .pp-panel[data-module="Global"] {
-  --biliverse-module-logo: url("/settings/assets/Global_subject_light.png");
+  --biliverse-module-logo: url("/settings/assets/Global_subject.png");
 }
 .pp-panel[data-module="Redirect"] {
-  --biliverse-module-logo: url("/settings/assets/Redirect_subject_light.png");
+  --biliverse-module-logo: url("/settings/assets/Redirect_subject.png");
 }
 .pp-panel[data-module="ADBlock"] {
-  --biliverse-module-logo: url("/settings/assets/ADBlock_subject_light.png");
+  --biliverse-module-logo: url("/settings/assets/ADBlock_subject.png");
 }
 /* 未提供 BoxJS icon 的字段数组由项目主题补充正文图标，通用包不绑定品牌。
  * The project theme supplies content icons for field arrays without BoxJS icon metadata. */
@@ -30,44 +30,6 @@
   .pp-module-logo:empty {
   display: block;
   background: var(--biliverse-module-logo) center / contain no-repeat;
-}
-@media (prefers-color-scheme: dark) {
-  .pp-panel[data-module="Enhanced"] {
-    --biliverse-module-logo: url("/settings/assets/Enhanced_subject_dark.png");
-  }
-  .pp-panel[data-module="Global"] {
-    --biliverse-module-logo: url("/settings/assets/Global_subject_dark.png");
-  }
-  .pp-panel[data-module="Redirect"] {
-    --biliverse-module-logo: url("/settings/assets/Redirect_subject_dark.png");
-  }
-  .pp-panel[data-module="ADBlock"] {
-    --biliverse-module-logo: url("/settings/assets/ADBlock_subject_dark.png");
-  }
-}
-:root[data-theme="dark"] .pp-panel[data-module="Enhanced"] {
-  --biliverse-module-logo: url("/settings/assets/Enhanced_subject_dark.png");
-}
-:root[data-theme="dark"] .pp-panel[data-module="Global"] {
-  --biliverse-module-logo: url("/settings/assets/Global_subject_dark.png");
-}
-:root[data-theme="dark"] .pp-panel[data-module="Redirect"] {
-  --biliverse-module-logo: url("/settings/assets/Redirect_subject_dark.png");
-}
-:root[data-theme="dark"] .pp-panel[data-module="ADBlock"] {
-  --biliverse-module-logo: url("/settings/assets/ADBlock_subject_dark.png");
-}
-:root[data-theme="light"] .pp-panel[data-module="Enhanced"] {
-  --biliverse-module-logo: url("/settings/assets/Enhanced_subject_light.png");
-}
-:root[data-theme="light"] .pp-panel[data-module="Global"] {
-  --biliverse-module-logo: url("/settings/assets/Global_subject_light.png");
-}
-:root[data-theme="light"] .pp-panel[data-module="Redirect"] {
-  --biliverse-module-logo: url("/settings/assets/Redirect_subject_light.png");
-}
-:root[data-theme="light"] .pp-panel[data-module="ADBlock"] {
-  --biliverse-module-logo: url("/settings/assets/ADBlock_subject_light.png");
 }
 .pp-panel .pp-header,
 .pp-panel .pp-back {
@@ -89,7 +51,7 @@ body {
   height: 64px;
   margin: 24px auto;
 }
-.brand-logo img,
+.brand-logo,
 .self-item .logo img {
   width: 100%;
   height: 100%;

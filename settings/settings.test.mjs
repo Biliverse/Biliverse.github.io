@@ -28,10 +28,10 @@ test('website output contains only landing material and no PreferencePanes runti
 
 test('static mock serves only same-build HTML and image material', async () => {
   const source = await readFile(new URL('../docs/public/settings/mock.js', import.meta.url), 'utf8');
-  const png = await readFile(new URL('icons/Enhanced_subject_dark.png', import.meta.url));
+  const png = await readFile(new URL('icons/Enhanced_subject.png', import.meta.url));
   const result = await new Promise((resolve) =>
     vm.runInNewContext(source, {
-      $request: { url: 'https://app.bilibili.com/settings/assets/Enhanced_subject_dark.png', method: 'GET' },
+      $request: { url: 'https://app.bilibili.com/settings/assets/Enhanced_subject.png', method: 'GET' },
       $task: {},
       $done: resolve,
       console: { log() {}, error() {} },

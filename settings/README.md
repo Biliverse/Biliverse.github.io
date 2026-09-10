@@ -26,4 +26,4 @@ pnpm settings:preview
 
 预览读取同级业务仓库 dist/config.dev.bundle.js，以及 NSNanoCat/PreferencePanes/dist/api.js，以独立内存模拟代理。先构建这两个仓库。预览不会复制 API 或配置到网站目录。
 
-网站构建只复制主页 HTML、theme.css 和图标素材。原始图标保持不变，处理记录见 icons-manifest.json；官方样式参考见 customer-service-research.md 与 provenance.json。
+网站构建只复制主页 HTML、theme.css 和单套透明图标素材。原始图标保持不变，处理记录见 icons-manifest.json；官方样式参考见 customer-service-research.md 与 provenance.json。
