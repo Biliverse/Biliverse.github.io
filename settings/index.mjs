@@ -1,4 +1,4 @@
-import { ModuleFrame, ModuleStatus, Navigation } from '/settings/assets/navigation.mjs';
+import { ActionMenu, ModuleFrame, ModuleStatus, Navigation } from '/settings/assets/navigation.mjs';
 
 const bridge = window.biliBridge;
 await bridge.initPromise;
@@ -12,6 +12,7 @@ const buttons = [...home.querySelectorAll('[data-module][data-page][data-json]')
 let frame;
 let navigationRevision = 0;
 let navigationState = { title: document.title, actions: [], busy: false };
+const menu = new ActionMenu((id) => frame.perform(id));
 
 /**
  * 应用官方主题事件使用的日夜标记。
@@ -46,6 +47,7 @@ bridge.addChannel('ui.observeKeyboardStatus', (result) => {
  */
 async function updateNavigation() {
   navigationState = navigation.current ? frame.state : { title: document.title, actions: [], busy: false };
+  menu.update(navigationState.actions, navigationState.busy);
   const revision = ++navigationRevision;
   await bridge.useNative('ui.setTitle', { title: navigationState.title });
   if (revision !== navigationRevision) return;
@@ -56,7 +58,6 @@ async function updateNavigation() {
             {
               id: 'biliverse.more',
               type: 3,
-              menu: { content: navigationState.actions.map((action) => ({ id: action.id, text: action.label })) },
               visible: true,
             },
           ]
@@ -66,8 +67,7 @@ async function updateNavigation() {
 
 bridge.addChannel('ui.observeNavigationClick', (result) => {
   if (result.code !== 0 || navigationState.busy) return;
-  const action = navigationState.actions.find((item) => item.id === result.data?.id);
-  if (action) frame.perform(action.id);
+  if (result.data?.id === 'biliverse.more') menu.open();
 });
 
 const navigation = new Navigation(container, home, (module, signal) => {
@@ -141,6 +141,7 @@ navigation.addEventListener('change', probe);
 window.addEventListener('pagehide', (event) => {
   if (event.persisted) return;
   for (const { status } of statuses) status.destroy();
+  menu.destroy();
   navigation.destroy();
 });
 probe();

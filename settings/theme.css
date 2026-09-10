@@ -2,6 +2,7 @@
  * Share the Biliverse accent between the landing page and CSS-imported module pages. */
 :root {
   --biliverse-accent: var(--brand_pink, #ff6699);
+  --pp-accent: var(--biliverse-accent);
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
