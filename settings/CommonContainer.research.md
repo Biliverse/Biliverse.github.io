@@ -23,7 +23,7 @@ Android 6.2.6 / 9060400 的 DEX 中另有 `bilibili://web/general/main` 和 `bil
 - 导航使用 V2 `ui.setNavigationHide`、`ui.setTitle`、`ui.setNavigationButton`，菜单点击使用 `ui.observeNavigationClick` 通道。
 - 非 common 入口明确提示更新 Enhanced 并重新从“我的”进入，不静默切换成网页菜单。
 - 用户于 2026-09-10 提供了 SDK 3.3.5、`container.common: true` 的真机导出，已确认入口选择成功；导出包含 100 个 V1 和 311 个 V2 方法。
-- 三点按钮的点击 ID 与维护操作 ID 分开处理：通过 `liveUI.selectPanel` 打开原生底部面板，`data.text` 返回选项 value。提示使用 `liveUI.toast` 的 short 模式。
-- 入口编码、去重、导航协议、异步选择保护与固定搜索由测试覆盖；新的主题事件、原生面板和提示最终外观仍需真机复测。
+- 三点按钮通过 `ui.setNavigationButton` 的 `menu.content` 直接声明维护操作；`ui.observeNavigationClick` 返回被选菜单项 ID。`liveUI.selectPanel` 是滚轮选择器，不用于导航菜单。提示使用 `liveUI.toast` 的 short 模式。
+- 入口编码、去重、导航协议、原生菜单负载与固定搜索由测试覆盖；新的主题事件、原生菜单和提示最终外观仍需真机复测。
 
 完整接口说明、`/tmp` 研究材料的核对结果及原始能力导出已归档到 [Biliverse/API](https://github.com/Biliverse/API/blob/main/reports/common-webview-settings-2026-09-10.md)。Apifox 的 Bilibili 项目（8774015）中，调研文档 ID 为 9430864，JSBridge 接口文档 ID 为 9430865。
