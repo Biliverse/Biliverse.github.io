@@ -38,6 +38,8 @@ Apifox 客户端快捷请求实际取得 [游戏中心 HTML](https://app.biligam
 
 现在首页直接引用 [官方 JSBridge SDK](https://s1.hdslb.com/bfs/seed/jinkela/short/jsb/js-bridge.min.js)（本次取得 3.3.5），由 SDK 处理初始化、回调与 iOS/Android 编码。根页面按游戏中心的查询与调用方式退出，子页面仍由 ModuleFrame 返回。等待 SDK 初始化后，若无旧通道则跳过该通道的能力查询，避免旧 `biliapp` 容器等待不存在的回调；没有可用退出接口时显示错误。
 
+客服中心 HTML 引入官方 JSBridge SDK 和自己的页面 bundle。页面 bundle 直接使用 SDK 导出的 `isSupport` 与全局 `biliBridge.callNative`：`ability.openScheme` 打开链接，`global.getContainerInfo` 读取容器信息，`ui.observeThemeChange` 切换 `night-mode`/`bili_dark`，`ability.copyToClipboard` 复制文本。官方没有把这些调用放进一个跨项目设置库。因此 Biliverse 的 `index.mjs` 直接调用官方 SDK；PreferencePanes 只保留与客户端无关的模块页、导航组件和存储接口。
+
 验证使用实际下载的官方 SDK，在 iOS WKWebView 对象消息与 Android 字符串消息两种宿主模型中执行，模拟旧通道支持关闭、V2 不支持关闭，确认依次发送能力查询和关闭请求。Apifox 不运行 Bilibili 原生 WebView，这些证据不能代替真机退出验证。该修复只部署网站，无需发布 PreferencePanes 或更新业务模块。
 
 ## 2026-09-09：首次全屏调查记录
