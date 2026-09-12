@@ -133,7 +133,8 @@ const statuses = buttons.map((button) => {
 function probe() {
   updateNavigation();
   if (navigation.current) return;
-  for (const { button, status } of statuses) status.check(button.dataset.json);
+  for (const { button, status } of statuses)
+    status.check(`/api/${encodeURIComponent(button.dataset.module)}`, { json: button.dataset.json });
 }
 
 bridge.useNative('ui.setNavigationHide', { hide: false });

@@ -34,6 +34,8 @@ test('website output contains its page script and no PreferencePanes runtime', a
   assert.match(page, /ui\.observeNavigationClick/);
   assert.doesNotMatch(page, /liveUI\.selectPanel/);
   assert.match(page, /from ['"]\/settings\/assets\/navigation\.mjs['"]/);
+  assert.match(page, /status\.check\(`\/api\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`/);
+  assert.doesNotMatch(page, /status\.check\(button\.dataset\.json\)/);
   assert.doesNotMatch(page, /BilibiliHost|host\.mjs/);
 });
 
