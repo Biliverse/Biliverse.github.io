@@ -8,7 +8,7 @@ const root = document.documentElement;
 const container = document.querySelector('[data-preference-panes-pages]');
 const home = document.querySelector('[data-preference-panes-home]');
 const template = document.querySelector('template[data-preference-panes-module]');
-const buttons = [...home.querySelectorAll('[data-module][data-page][data-json]')];
+const buttons = [...home.querySelectorAll('[data-module]')];
 let frame;
 let navigationRevision = 0;
 let navigationState = { title: document.title, actions: [], busy: false };
@@ -75,13 +75,7 @@ const navigation = new Navigation(container, home, (module, signal) => {
   if (!button) return;
   const page = template.content.firstElementChild.cloneNode(true);
   const message = page.querySelector('[data-module-message]');
-  frame = new ModuleFrame(button.dataset.page, {
-    signal,
-    headers: {
-      'X-PreferencePanes-JSON': button.dataset.json,
-      ...(button.dataset.css ? { 'X-PreferencePanes-CSS': button.dataset.css } : {}),
-    },
-  });
+  frame = new ModuleFrame(`/settings/${encodeURIComponent(button.dataset.module)}`, { signal });
   frame.addEventListener('confirm', (event) => {
     event.preventDefault();
     bridge.callNative({
@@ -134,7 +128,7 @@ function probe() {
   updateNavigation();
   if (navigation.current) return;
   for (const { button, status } of statuses)
-    status.check(`/api/${encodeURIComponent(button.dataset.module)}`, { json: button.dataset.json });
+    status.check(`/api/${encodeURIComponent(button.dataset.module)}`);
 }
 
 bridge.useNative('ui.setNavigationHide', { hide: false });

@@ -19,7 +19,7 @@ const server = http.createServer(async (request, reply) => {
     const api = /^\/api\//.test(url.pathname);
     const web =
       /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.test(url.pathname) ||
-      ['/settings/assets/app.mjs', '/settings/assets/navigation.mjs'].includes(url.pathname);
+      ['/settings/assets/index.mjs', '/settings/assets/navigation.mjs'].includes(url.pathname);
     if (config || api || web) {
       let body = '';
       for await (const chunk of request) body += chunk;
