@@ -17,7 +17,7 @@ test('the landing page loads the official SDK and one project-owned page script'
 
 test('website output contains its page script and no PreferencePanes runtime', async () => {
   const assets = await readdir(new URL('../docs/public/settings/assets/', import.meta.url));
-  for (const file of ['host.mjs', 'app.mjs', 'navigation.mjs', 'bilibili.mjs'])
+  for (const file of ['host.mjs', 'index.mjs', 'navigation.mjs', 'bilibili.mjs'])
     assert.equal(assets.includes(file), false);
   for (const file of ['home.js', 'home.css', 'bilibili.mjs'])
     await assert.rejects(access(new URL(`../docs/public/settings/${file}`, import.meta.url)), { code: 'ENOENT' });

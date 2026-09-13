@@ -10,7 +10,7 @@
 
 - 配置 Mock：从同版业务仓库的 Gist/Release 取得 BoxJS JSON，非原生 Mock 平台使用同版纯配置响应脚本。
 - 项目主页：把本站的 index.html、index.mjs 和图片素材映射到 app.bilibili.com；官方 CSS 和 JSBridge SDK 始终直接使用官方地址。
-- 设置前端：`/settings/{module}`、app.mjs 和 navigation.mjs 引用 https://github.com/NSNanoCat/PreferencePanes/releases/latest/download/web.js。
+- 设置前端：`/settings/{module}`、index.mjs 和 navigation.mjs 引用 https://github.com/NSNanoCat/PreferencePanes/releases/latest/download/web.js。
 - 模块 API：`/api/{module}` 及其 get/set/delete 动作引用 https://github.com/NSNanoCat/PreferencePanes/releases/latest/download/api.js。
 
 Enhanced、Global、Redirect、ADBlock 的接入模板均包含配置 Mock、设置前端和模块 API。PreferencePanes 的 `api.js` 与 `web.js` 必须来自同一 Release，再更新业务模块模板。
