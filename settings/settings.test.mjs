@@ -6,8 +6,8 @@ import vm from 'node:vm';
 test('the landing page loads the official SDK and one project-owned page script', async () => {
   const html = await readFile(new URL('index.html', import.meta.url), 'utf8');
   assert.equal((html.match(/data-module=/g) ?? []).length, 4);
-  for (const attribute of ['data-page=', 'data-json=', 'data-css=', 'data-module-status'])
-    assert.equal((html.match(new RegExp(attribute, 'g')) ?? []).length, 4);
+  assert.equal((html.match(/data-module-status/g) ?? []).length, 4);
+  assert.doesNotMatch(html, /data-(?:page|json|css)=/);
   assert.match(html, /s1\.hdslb\.com\/bfs\/seed\/jinkela\/short\/jsb\/js-bridge\.min\.js/);
   assert.match(html, /s1\.hdslb\.com\/bfs\/static\/2233-monorepo\/customer-service-h5\/static\/css/);
   assert.match(html, /src="\/settings\/index\.mjs"/);
@@ -34,8 +34,9 @@ test('website output contains its page script and no PreferencePanes runtime', a
   assert.match(page, /ui\.observeNavigationClick/);
   assert.doesNotMatch(page, /liveUI\.selectPanel/);
   assert.match(page, /from ['"]\/settings\/assets\/navigation\.mjs['"]/);
-  assert.match(page, /status\.check\(`\/api\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`/);
-  assert.doesNotMatch(page, /status\.check\(button\.dataset\.json\)/);
+  assert.match(page, /status\.check\(`\/api\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`\)/);
+  assert.match(page, /new ModuleFrame\(`\/settings\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`/);
+  assert.doesNotMatch(page, /X-PreferencePanes-(?:JSON|CSS)|dataset\.(?:page|json|css)/);
   assert.doesNotMatch(page, /BilibiliHost|host\.mjs/);
 });
 
