@@ -3,10 +3,57 @@ import http from 'node:http';
 import path from 'node:path';
 import vm from 'node:vm';
 
-// 预览真实发布产物；代理只使用独立内存，不导入 Enhanced 业务代码。
-// Preview the real deployment artifacts with isolated storage, without importing Enhanced business code.
+// 预览真实发布产物；Enhanced 提供唯一通用前后端，各模块只提供配置。
+// Preview the real deployment artifacts with Enhanced owning the shared frontend/backend and modules owning only configs.
 const publicDir = path.resolve(import.meta.dirname, '../docs/public');
 const store = new Map();
+
+const execute = (script, request) =>
+  new Promise((resolve) =>
+    vm.runInNewContext(script, {
+      $environment: { 'surge-version': 'preview' },
+      $script: { startTime: Date.now() / 1000 },
+      $persistentStore: {
+        read: (key) => store.get(key),
+        write: (value, key) => {
+          store.set(key, value);
+          return true;
+        },
+      },
+      $request: request,
+      $done: (value) => resolve(value.response),
+      $httpClient: {
+        head: (options, callback) => relayConfig(options, 'HEAD', callback),
+        get: (options, callback) => relayConfig(options, 'GET', callback),
+      },
+      console,
+      setTimeout,
+      clearTimeout,
+    }),
+  );
+
+async function configResponse(resource) {
+  const url = new URL(resource.url);
+  const match = /^\/configs\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname);
+  if (!match) return { status: 404, headers: {}, body: '' };
+  try {
+    const script = await readFile(path.resolve(import.meta.dirname, '../..', match[1], 'dist/config.dev.bundle.js'), 'utf8');
+    return (await execute(script, { url: url.href, method: resource.method, headers: resource.headers ?? {}, body: resource.body })) ?? { status: 404, headers: {}, body: '' };
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    return { status: 404, headers: {}, body: '' };
+  }
+}
+
+async function relayConfig(options, method, callback) {
+  try {
+    const result = await configResponse({ ...options, method });
+    callback(null, { status: result.status, headers: result.headers }, result.body);
+  } catch (error) {
+    callback(error);
+  }
+}
+
 const server = http.createServer(async (request, reply) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
@@ -23,38 +70,13 @@ const server = http.createServer(async (request, reply) => {
     if (config || api || web) {
       let body = '';
       for await (const chunk of request) body += chunk;
-      // 仅在本地预览中读取各模块自己构建的产物，网站不保存配置或存储脚本。
-      // Local previews read each module's own artifacts; the website stores neither configs nor storage scripts.
-      let script;
-      try {
-        const file = config
-          ? path.resolve(import.meta.dirname, '../..', config[1], 'dist/config.dev.bundle.js')
-          : path.resolve(import.meta.dirname, '../../..', `NSNanoCat/PreferencePanes/dist/${api ? 'api' : 'web'}.js`);
-        script = await readFile(file, 'utf8');
-      } catch (error) {
-        if (error.code !== 'ENOENT') throw error;
-        reply.writeHead(404);
-        reply.end();
-        return;
+      let result;
+      if (config) result = await configResponse({ url: url.href, method: request.method, headers: request.headers, body });
+      else {
+        const file = path.resolve(import.meta.dirname, '../../..', `NSNanoCat/PreferencePanes/dist/${api ? 'api' : 'web'}.js`);
+        const script = await readFile(file, 'utf8');
+        result = await execute(script, { url: url.href, method: request.method, headers: request.headers, body });
       }
-      const result = await new Promise((resolve) =>
-        vm.runInNewContext(script, {
-          $environment: { 'surge-version': 'preview' },
-          $script: { startTime: Date.now() / 1000 },
-          $persistentStore: {
-            read: (key) => store.get(key),
-            write: (value, key) => {
-              store.set(key, value);
-              return true;
-            },
-          },
-          $request: { url: url.href, method: request.method, headers: request.headers, body },
-          $done: (value) => resolve(value.response),
-          console,
-          setTimeout,
-          clearTimeout,
-        }),
-      );
       reply.writeHead(result?.status ?? 404, result?.headers);
       reply.end(result?.body);
       return;
