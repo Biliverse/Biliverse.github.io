@@ -16,11 +16,11 @@ const server = http.createServer(async (request, reply) => {
       return;
     }
     const config = /^\/configs\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname);
-    const common =
-      /^\/api\//.test(url.pathname) ||
+    const api = /^\/api\//.test(url.pathname);
+    const web =
       /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.test(url.pathname) ||
       ['/settings/assets/app.mjs', '/settings/assets/navigation.mjs'].includes(url.pathname);
-    if (config || common) {
+    if (config || api || web) {
       let body = '';
       for await (const chunk of request) body += chunk;
       // 仅在本地预览中读取各模块自己构建的产物，网站不保存配置或存储脚本。
@@ -29,7 +29,7 @@ const server = http.createServer(async (request, reply) => {
       try {
         const file = config
           ? path.resolve(import.meta.dirname, '../..', config[1], 'dist/config.dev.bundle.js')
-          : path.resolve(import.meta.dirname, '../../..', 'NSNanoCat/PreferencePanes/dist/api.js');
+          : path.resolve(import.meta.dirname, '../../..', `NSNanoCat/PreferencePanes/dist/${api ? 'api' : 'web'}.js`);
         script = await readFile(file, 'utf8');
       } catch (error) {
         if (error.code !== 'ENOENT') throw error;
