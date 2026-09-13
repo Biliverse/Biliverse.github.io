@@ -40,11 +40,13 @@ test('website output contains its page script and no PreferencePanes runtime', a
   assert.doesNotMatch(page, /BilibiliHost|host\.mjs/);
 });
 
-test('local preview routes PreferencePanes API and web artifacts independently', async () => {
+test('local preview routes the single PreferencePanes API and web artifacts independently', async () => {
   const source = await readFile(new URL('../scripts/preview-settings.mjs', import.meta.url), 'utf8');
   assert.ok(source.includes('const api = /^\\/api\\//.test(url.pathname);'));
   assert.ok(source.includes('const web ='));
   assert.ok(source.includes("${api ? 'api' : 'web'}.js"));
+  assert.match(source, /relayConfig\(options, 'HEAD'/);
+  assert.match(source, /configResponse\(\{ \.\.\.options, method \}\)/);
   assert.doesNotMatch(source, /const common =/);
 });
 
