@@ -40,14 +40,13 @@ test('website output contains its page script and no PreferencePanes runtime', a
   assert.doesNotMatch(page, /BilibiliHost|host\.mjs/);
 });
 
-test('local preview routes the single PreferencePanes API and web artifacts independently', async () => {
+test('local preview routes module BoxJS APIs separately from the fixed storage API and web artifact', async () => {
   const source = await readFile(new URL('../scripts/preview-settings.mjs', import.meta.url), 'utf8');
-  assert.ok(source.includes('const api = /^\\/api\\//.test(url.pathname);'));
+  assert.ok(source.includes("const match = /^\\/api\\/([a-zA-Z0-9_-]+)$/.exec(url.pathname);"));
+  assert.ok(source.includes("const api = /^\\/api\\/(?:get|set|delete)$/.test(url.pathname);"));
   assert.ok(source.includes('const web ='));
   assert.ok(source.includes("${api ? 'api' : 'web'}.js"));
-  assert.match(source, /relayConfig\(options, 'HEAD'/);
-  assert.match(source, /configResponse\(\{ \.\.\.options, method \}\)/);
-  assert.doesNotMatch(source, /const common =/);
+  assert.doesNotMatch(source, /\$httpClient|relayConfig|\/configs\//);
 });
 
 test('static mock serves only same-build project page resources', async () => {
@@ -80,6 +79,7 @@ test('static mock serves only same-build project page resources', async () => {
     '/settings/assets/navigation.mjs',
     '/settings/Enhanced',
     '/configs/Enhanced',
+    '/api/Enhanced',
     '/api/get',
   ]) {
     const missing = await new Promise((resolve) =>

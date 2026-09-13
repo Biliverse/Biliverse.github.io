@@ -3,8 +3,8 @@ import http from 'node:http';
 import path from 'node:path';
 import vm from 'node:vm';
 
-// 预览真实发布产物；Enhanced 提供唯一通用前后端，各模块只提供配置。
-// Preview the real deployment artifacts with Enhanced owning the shared frontend/backend and modules owning only configs.
+// 预览真实发布产物；Enhanced 提供通用前端与固定存储 API，各模块直接提供自己的 BoxJS API。
+// Preview the real deployment artifacts with Enhanced owning the shared frontend and fixed storage API while modules expose their BoxJS APIs directly.
 const publicDir = path.resolve(import.meta.dirname, '../docs/public');
 const store = new Map();
 
@@ -22,19 +22,14 @@ const execute = (script, request) =>
       },
       $request: request,
       $done: (value) => resolve(value.response),
-      $httpClient: {
-        head: (options, callback) => relayConfig(options, 'HEAD', callback),
-        get: (options, callback) => relayConfig(options, 'GET', callback),
-      },
       console,
-      setTimeout,
-      clearTimeout,
     }),
   );
 
 async function configResponse(resource) {
   const url = new URL(resource.url);
-  const match = /^\/configs\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname);
+  const match = /^\/api\/([a-zA-Z0-9_-]+)$/.exec(url.pathname);
+  if (['get', 'set', 'delete'].includes(match?.[1])) return { status: 404, headers: {}, body: '' };
   if (!match) return { status: 404, headers: {}, body: '' };
   try {
     const script = await readFile(path.resolve(import.meta.dirname, '../..', match[1], 'dist/config.dev.bundle.js'), 'utf8');
@@ -42,15 +37,6 @@ async function configResponse(resource) {
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
     return { status: 404, headers: {}, body: '' };
-  }
-}
-
-async function relayConfig(options, method, callback) {
-  try {
-    const result = await configResponse({ ...options, method });
-    callback(null, { status: result.status, headers: result.headers }, result.body);
-  } catch (error) {
-    callback(error);
   }
 }
 
@@ -62,8 +48,8 @@ const server = http.createServer(async (request, reply) => {
       reply.end();
       return;
     }
-    const config = /^\/configs\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname);
-    const api = /^\/api\//.test(url.pathname);
+    const config = /^\/api\/([a-zA-Z0-9_-]+)$/.exec(url.pathname) && !/^\/api\/(?:get|set|delete)$/.test(url.pathname);
+    const api = /^\/api\/(?:get|set|delete)$/.test(url.pathname);
     const web =
       /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.test(url.pathname) ||
       ['/settings/assets/index.mjs', '/settings/assets/navigation.mjs'].includes(url.pathname);
