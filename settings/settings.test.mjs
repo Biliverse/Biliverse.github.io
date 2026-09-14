@@ -12,10 +12,12 @@ async function runOpenURLAdapter(supported, failure) {
   const nativeCalls = [];
   const assigned = [];
   class ModuleFrame extends EventTarget {
-    constructor() {
+    constructor(url, options) {
       super();
       this.element = {};
       this.state = { title: 'Enhanced', actions: [], busy: false };
+      this.url = url;
+      this.options = options;
       frames.push(this);
     }
     load() {
@@ -95,7 +97,7 @@ async function runOpenURLAdapter(supported, failure) {
     const url = 'bilibili://main/top_category';
     const accepted = frames[0].dispatchEvent(new CustomEvent('open-url', { cancelable: true, detail: { url } }));
     if (failure) nativeCalls[0].callback(failure);
-    return { accepted, assigned, nativeCalls, url };
+    return { accepted, assigned, frame: frames[0], nativeCalls, url };
   } finally {
     for (const [name, descriptor] of descriptors) {
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);
@@ -136,18 +138,25 @@ test('website output contains its page script and no PreferencePanes runtime', a
   assert.doesNotMatch(page, /liveUI\.selectPanel/);
   assert.match(page, /from ['"]\/settings\/assets\/navigation\.mjs['"]/);
   assert.match(page, /status\.check\(`\/api\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`\)/);
-  assert.match(page, /new ModuleFrame\(`\/settings\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`/);
+  assert.match(page, /const moduleName = encodeURIComponent\(button\.dataset\.module\)/);
+  assert.match(page, /new ModuleFrame\(`\/settings\/\$\{moduleName\}`/);
   assert.match(page, /await bridge\.isSupport\('ability\.openScheme'\)/);
   assert.match(page, /frame\.addEventListener\('open-url'/);
   assert.match(page, /https:\/\/biliverse\.github\.io\/settings\/theme\.css\?v=0\.9\.10/);
+  assert.match(page, /['"]X-PreferencePanes-JSON['"]: `\/api\/\$\{moduleName\}`/);
   assert.match(page, /['"]X-PreferencePanes-CSS['"]: moduleStylesheet/);
-  assert.doesNotMatch(page, /X-PreferencePanes-JSON|dataset\.(?:page|json|css)/);
+  assert.doesNotMatch(page, /dataset\.(?:page|json|css)/);
   assert.doesNotMatch(page, /BilibiliHost|host\.mjs/);
 });
 
 test('Bilibili URL adapter only owns supported navigation and falls back after native failure', async () => {
   const unsupported = await runOpenURLAdapter(false);
   assert.equal(unsupported.accepted, true);
+  assert.equal(unsupported.frame.url, '/settings/Enhanced');
+  assert.deepEqual(unsupported.frame.options.headers, {
+    'X-PreferencePanes-JSON': '/api/Enhanced',
+    'X-PreferencePanes-CSS': 'https://biliverse.github.io/settings/theme.css?v=0.9.10',
+  });
   assert.deepEqual(unsupported.nativeCalls, []);
   assert.deepEqual(unsupported.assigned, []);
 
