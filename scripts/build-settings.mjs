@@ -26,16 +26,20 @@ if (stamp) {
     outputs.get('settings/index.html').toString().replace('本地预览（未构建）', label),
   );
 }
-// 不支持远程文件 Mock 的代理返回同次构建的静态资源；CSS 从网站直连，不打包进 Mock。
-// Proxies without remote file mocks return same-build assets; CSS loads directly from the site, outside mocks.
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.png': 'image/png' };
+// 不支持远程文件 Mock 的代理返回同次构建的静态资源，包括模块页使用的项目主题。
+// Proxies without remote file mocks return same-build assets, including the project theme used by module pages.
+const types = {
+  '.css': 'text/css',
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.mjs': 'text/javascript',
+  '.png': 'image/png',
+};
 const assets = Object.fromEntries(
-  [...outputs]
-    .filter(([name]) => !name.endsWith('.css'))
-    .map(([name, body]) => [
-      name === 'settings/index.html' ? '/settings/' : `/${name}`,
-      [types[path.extname(name)], name.endsWith('.png') ? [...body] : body.toString()],
-    ]),
+  [...outputs].map(([name, body]) => [
+    name === 'settings/index.html' ? '/settings/' : `/${name}`,
+    [types[path.extname(name)], name.endsWith('.png') ? [...body] : body.toString()],
+  ]),
 );
 const bundle = await rollup({
   input: path.join(root, 'settings/mock.mjs'),
