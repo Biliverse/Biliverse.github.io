@@ -2,7 +2,7 @@
 
 本站维护 Biliverse 设置主页、一个与主页配套的页面脚本、可选项目主题和图片素材。Enhanced 唯一安装 PreferencePanes latest 的 `web.js` 和固定存储 `api.js`；每个业务模块将自己的同版 BoxJS JSON 直接 Mock 到 `/api/{module}`。
 
-主页 HTML 只以 data 属性声明模块名，并直接引入 Bilibili 官方 JSBridge SDK。`index.mjs` 是 Biliverse 页面自己的业务脚本：它从 `web.js` 加载通用 Navigation/ModuleFrame/ModuleStatus 网页组件，按 `/settings/{module}` 打开模块页，并直接调用全局 `biliBridge` 实现 common 容器的主题、导航、菜单、确认和提示。PreferencePanes 不包含任何 Bilibili SDK 逻辑；github.io 不托管模块页面、通用 API 或 BoxJS JSON。
+主页 HTML 只以 data 属性声明模块名，并直接引入 Bilibili 官方 JSBridge SDK。`index.mjs` 是 Biliverse 页面自己的业务脚本：它从 `web.js` 加载通用 Navigation/ModuleFrame/ModuleStatus 网页组件，按 `/settings/{module}` 打开模块页，通过 `X-PreferencePanes-CSS` 传入本站 `theme.css`，并直接调用全局 `biliBridge` 实现 common 容器的主题、导航、菜单、确认和提示。PreferencePanes 不包含任何 Bilibili SDK 逻辑；github.io 不托管模块页面、通用 API 或 BoxJS JSON。
 
 ## 安装与升级
 
@@ -10,7 +10,7 @@
 
 - 配置 Mock：从同版业务仓库的 Gist/Release 取得 BoxJS JSON，非原生 Mock 平台使用同版纯配置响应脚本。
 - 项目主页：把本站的 index.html、index.mjs 和图片素材映射到 app.bilibili.com；官方 CSS 和 JSBridge SDK 始终直接使用官方地址。
-- 通用设置前后端：仅 Enhanced 安装 `web.js` 和 `api.js`。前者处理任意合法 `/settings/{module}` 以及 `index.mjs`、`navigation.mjs`；后者只处理固定 `/api/get|set|delete`。
+- 通用设置前后端：仅 Enhanced 安装 `web.js` 和 `api.js`。前者处理任意合法 `/settings/{module}` 以及 `index.mjs`、`navigation.mjs`，并把 Header 指定的本站主题直接写入模块 HTML；后者只处理固定 `/api/get|set|delete`。
 
 Enhanced 的接入模板包含 `/api/Enhanced` BoxJS Mock，以及唯一通用设置前端和固定存储 API。Global、Redirect、ADBlock 的接入模板只包含各自的 `/api/{module}` BoxJS Mock，不引用 PreferencePanes `web.js` 或 `api.js`。PreferencePanes 的 `api.js` 与 `web.js` 必须来自同一 Release，再更新 Enhanced 模板。
 
