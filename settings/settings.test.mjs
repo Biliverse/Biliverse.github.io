@@ -36,7 +36,9 @@ test('website output contains its page script and no PreferencePanes runtime', a
   assert.match(page, /from ['"]\/settings\/assets\/navigation\.mjs['"]/);
   assert.match(page, /status\.check\(`\/api\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`\)/);
   assert.match(page, /new ModuleFrame\(`\/settings\/\$\{encodeURIComponent\(button\.dataset\.module\)\}`/);
-  assert.doesNotMatch(page, /X-PreferencePanes-(?:JSON|CSS)|dataset\.(?:page|json|css)/);
+  assert.match(page, /https:\/\/biliverse\.github\.io\/settings\/theme\.css\?v=0\.9\.10/);
+  assert.match(page, /['"]X-PreferencePanes-CSS['"]: moduleStylesheet/);
+  assert.doesNotMatch(page, /X-PreferencePanes-JSON|dataset\.(?:page|json|css)/);
   assert.doesNotMatch(page, /BilibiliHost|host\.mjs/);
 });
 

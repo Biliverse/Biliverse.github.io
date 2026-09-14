@@ -9,6 +9,7 @@ const container = document.querySelector('[data-preference-panes-pages]');
 const home = document.querySelector('[data-preference-panes-home]');
 const template = document.querySelector('template[data-preference-panes-module]');
 const buttons = [...home.querySelectorAll('[data-module]')];
+const moduleStylesheet = 'https://biliverse.github.io/settings/theme.css?v=0.9.10';
 let frame;
 let navigationRevision = 0;
 let navigationState = { title: document.title, actions: [], busy: false };
@@ -75,7 +76,10 @@ const navigation = new Navigation(container, home, (module, signal) => {
   if (!button) return;
   const page = template.content.firstElementChild.cloneNode(true);
   const message = page.querySelector('[data-module-message]');
-  frame = new ModuleFrame(`/settings/${encodeURIComponent(button.dataset.module)}`, { signal });
+  frame = new ModuleFrame(`/settings/${encodeURIComponent(button.dataset.module)}`, {
+    signal,
+    headers: { 'X-PreferencePanes-CSS': moduleStylesheet },
+  });
   frame.addEventListener('confirm', (event) => {
     event.preventDefault();
     bridge.callNative({
