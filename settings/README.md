@@ -2,7 +2,7 @@
 
 本站维护 Biliverse 设置主页、一个与主页配套的页面脚本、可选项目主题和图片素材。Enhanced 唯一安装 PreferencePanes latest 的 `web.js` 和固定存储 `api.js`；每个业务模块将自己的同版 BoxJS JSON 直接 Mock 到 `/api/{module}`。
 
-主页 HTML 只以 data 属性声明模块名，并直接引入 Bilibili 官方 JSBridge SDK。`index.mjs` 是 Biliverse 页面自己的业务脚本：它从 `web.js` 加载通用 Navigation/ModuleFrame/ModuleStatus 网页组件，按 `/settings/{module}` 打开模块页，通过 `X-PreferencePanes-CSS` 传入本站 `theme.css`，并直接调用全局 `biliBridge` 实现 common 容器的主题、导航、菜单、确认和提示。PreferencePanes 不包含任何 Bilibili SDK 逻辑；github.io 不托管模块页面、通用 API 或 BoxJS JSON。
+主页 HTML 只以 data 属性声明模块名，并直接引入 Bilibili 官方 JSBridge SDK。`index.mjs` 是 Biliverse 页面自己的业务脚本：它从 `web.js` 加载通用 Navigation/ModuleFrame/ModuleStatus 网页组件，按 `/settings/{module}` 打开模块页，通过 `X-PreferencePanes-CSS` 传入本站 `theme.css`，并直接调用全局 `biliBridge` 实现 common 容器的主题、导航、菜单、确认、提示和 `open-url` 的原生跳转。只有 `ability.openScheme` 可用时网站才接管链接；原生调用明确失败时退回顶层标准导航。PreferencePanes 不包含任何 Bilibili SDK 逻辑；github.io 不托管模块页面、通用 API 或 BoxJS JSON。
 
 ## 安装与升级
 

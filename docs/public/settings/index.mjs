@@ -3,6 +3,7 @@ import { ActionMenu, ModuleFrame, ModuleStatus, Navigation } from '/settings/ass
 const bridge = window.biliBridge;
 await bridge.initPromise;
 if (!bridge.isWbTypeCommon) throw new Error('Biliverse requires a Bilibili common WebView');
+const openSchemeSupported = await bridge.isSupport('ability.openScheme');
 
 const root = document.documentElement;
 const container = document.querySelector('[data-preference-panes-pages]');
@@ -26,6 +27,27 @@ function applyTheme(value) {
   root.dataset.theme = dark ? 'dark' : 'light';
   root.classList.toggle('night-mode', dark);
   root.classList.toggle('bili_dark', dark);
+}
+
+/**
+ * 使用 Common WebView 原生能力打开地址，明确失败时退回顶层标准导航。
+ * Open a URL through Common WebView and fall back to top-level navigation on an explicit failure.
+ * @param {string} url 完整目标地址 / Absolute target URL.
+ * @returns {void} 无返回值 / No return value.
+ */
+function openURL(url) {
+  try {
+    bridge.callNative({
+      method: 'ability.openScheme',
+      data: { url },
+      callback: (result) => {
+        if (result instanceof Error || result === 'error' || (typeof result?.code === 'number' && result.code !== 0))
+          window.location.assign(url);
+      },
+    });
+  } catch {
+    window.location.assign(url);
+  }
 }
 
 applyTheme(navigator.userAgent.includes('themeId/2') ? 2 : 1);
@@ -102,6 +124,11 @@ const navigation = new Navigation(container, home, (module, signal) => {
   frame.addEventListener('notice', (event) => {
     event.preventDefault();
     bridge.useNative('liveUI.toast', { type: 'short', msg: event.detail.message });
+  });
+  frame.addEventListener('open-url', (event) => {
+    if (!openSchemeSupported) return;
+    event.preventDefault();
+    openURL(event.detail.url);
   });
   frame.addEventListener('change', updateNavigation);
   frame.element.onload = () => {
