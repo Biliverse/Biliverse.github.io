@@ -98,9 +98,13 @@ const navigation = new Navigation(container, home, (module, signal) => {
   if (!button) return;
   const page = template.content.firstElementChild.cloneNode(true);
   const message = page.querySelector('[data-module-message]');
-  frame = new ModuleFrame(`/settings/${encodeURIComponent(button.dataset.module)}`, {
+  const moduleName = encodeURIComponent(button.dataset.module);
+  frame = new ModuleFrame(`/settings/${moduleName}`, {
     signal,
-    headers: { 'X-PreferencePanes-CSS': moduleStylesheet },
+    headers: {
+      'X-PreferencePanes-JSON': `/api/${moduleName}`,
+      'X-PreferencePanes-CSS': moduleStylesheet,
+    },
   });
   frame.addEventListener('confirm', (event) => {
     event.preventDefault();
