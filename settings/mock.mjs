@@ -9,7 +9,7 @@ import assets from "#website-assets";
  */
 function serve() {
   let response;
-  const pathname = /^https:\/\/app\.bilibili\.com(\/[^?#]*)/.exec($request.url)?.[1];
+  const pathname = /^https:\/\/(?:biliverse\.github\.io|app\.bilibili\.com)(\/[^?#]*)/.exec($request.url)?.[1];
   const asset = assets[pathname];
   switch (true) {
     case !asset:

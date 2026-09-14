@@ -177,9 +177,10 @@ test('local preview routes module BoxJS APIs separately from the fixed storage A
   assert.doesNotMatch(source, /\$httpClient|relayConfig|\/configs\//);
 });
 
-test('static mock serves only same-build project page resources', async () => {
+test('static mock serves only same-build project page resources and theme', async () => {
   const source = await readFile(new URL('../docs/public/settings/mock.js', import.meta.url), 'utf8');
   const png = await readFile(new URL('icons/Enhanced_subject.png', import.meta.url));
+  const theme = await readFile(new URL('theme.css', import.meta.url), 'utf8');
   const result = await new Promise((resolve) =>
     vm.runInNewContext(source, {
       $request: { url: 'https://app.bilibili.com/settings/assets/Enhanced_subject.png', method: 'GET' },
@@ -203,6 +204,18 @@ test('static mock serves only same-build project page resources', async () => {
   );
   assert.match(script.body, /window\.biliBridge/);
   assert.match(script.body, /method: 'ability\.openScheme'/);
+  const css = await new Promise((resolve) =>
+    vm.runInNewContext(source, {
+      $request: { url: 'https://biliverse.github.io/settings/theme.css?v=0.9.10', method: 'GET' },
+      $task: {},
+      $done: resolve,
+      console: { log() {}, error() {} },
+      ArrayBuffer,
+      Uint8Array,
+    }),
+  );
+  assert.equal(css.headers['Content-Type'], 'text/css');
+  assert.equal(css.body, theme);
   for (const pathname of [
     '/settings/assets/host.mjs',
     '/settings/assets/navigation.mjs',
