@@ -12,6 +12,10 @@ import _Footer from "./_Footer.md";
 
 `v0.6.0` 增加了新的 gRPC 请求处理规则。请更新完整的「模块」、「插件」或「覆写」文件，不要只更新脚本。
 
+安装产物已由 `BiliBili.Enhanced` 更名为 `Biliverse.Enhanced`，原下载地址不再使用，请通过下方链接重新安装。
+
+BoxJS 设置与缓存空间已由 `@BiliBili.Enhanced` 更名为 `@Biliverse.Enhanced`，旧空间中的数据不会迁移，请重新配置。
+
 :::
 
 ## 使用方式
@@ -27,7 +31,8 @@ import _Footer from "./_Footer.md";
   2. 进入「自定义标签页」，选择、排序或清空需要显示的标签页
   3. 保存后，相同顺序会同时用于「快捷访问」和「首页标签栏」
   * App 内保存的结果优先于「模块参数」中的默认标签页
-  * BoxJS 中的「[首页] 标签页」仅作为跳转入口，会打开当前版本的「分区」页面
+  * BoxJS 的「[首页] 标签页」提供直播、推荐、热门、番剧、动画（港澳台）、影视、韩综（港澳台）和校园 8 个常用选项
+  * 「分区」页面有接近 60 个快捷访问选项，BoxJS 无法完整列出；需要其他选项时请使用 App 原生「快捷访问」功能配置
 * 模块参数：配合 Loon 设置面板或 Surge 模块参数进行快速配置
   * 可配置「首页」开关、「默认标签页」、「底部导航栏」等选项
 * BoxJS：过渡兼容方式
@@ -40,7 +45,7 @@ import _Footer from "./_Footer.md";
   2. 在 BoxJS 的配置面板中进行个性化设置：
      1. 浏览器访问 [BoxJS.com](http://boxjs.com)
      2. 在[「应用」](http://boxjs.com/#/app)页面展开「📺 BiliBili」
-     3. 打开[「📺 BiliBili: Enhanced」](http://boxjs.com/#/app/BiliBili.Enhanced)并按需填写设置
+     3. 分别打开「Enhanced（首页）」、「Enhanced（分区）」、「Enhanced（我的）iOS版」和「Enhanced（我的）iPad版」并按需填写设置
   </details>
 
 ## 功能列表
@@ -65,7 +70,7 @@ import _Footer from "./_Footer.md";
 <ModuleInstall urlPrefix="https://github.com/Biliverse/Enhanced/releases/latest/download/">
   <ModuleInstall.Tab type="loon">
     <ModuleInstall.Item
-      url="BiliBili.Enhanced.plugin"
+      url="Biliverse.Enhanced.plugin"
       badge={[
         {
           type: "tip",
@@ -82,7 +87,7 @@ import _Footer from "./_Footer.md";
   </ModuleInstall.Tab>
   <ModuleInstall.Tab type="surge">
     <ModuleInstall.Item
-      url="BiliBili.Enhanced.sgmodule"
+      url="Biliverse.Enhanced.sgmodule"
       badge={[
         {
           type: "danger",
@@ -99,7 +104,7 @@ import _Footer from "./_Footer.md";
   </ModuleInstall.Tab>
   <ModuleInstall.Tab type="stash">
     <ModuleInstall.Item
-      url="BiliBili.Enhanced.stoverride"
+      url="Biliverse.Enhanced.stoverride"
       badge={[
         {
           type: "info",
@@ -121,12 +126,12 @@ import _Footer from "./_Footer.md";
   </ModuleInstall.Tab>
   <ModuleInstall.Tab type="egern">
     <ModuleInstall.Item
-      url="BiliBili.Enhanced.yaml"
+      url="Biliverse.Enhanced.yaml"
     />
   </ModuleInstall.Tab>
   <ModuleInstall.Tab type="qx">
     <ModuleInstall.Item
-      url="BiliBili.Enhanced.snippet"
+      url="Biliverse.Enhanced.snippet"
       badge={[
         {
           type: "danger",
@@ -143,7 +148,7 @@ import _Footer from "./_Footer.md";
   </ModuleInstall.Tab>
   <ModuleInstall.Tab type="shadowrocket">
     <ModuleInstall.Item
-      url="BiliBili.Enhanced.srmodule"
+      url="Biliverse.Enhanced.srmodule"
       badge={[
         {
           type: "tip",
