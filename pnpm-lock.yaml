@@ -27,12 +27,6 @@ importers:
       '@biomejs/biome':
         specifier: ^1.9.4
         version: 1.9.4
-      '@nsnanocat/util':
-        specifier: ^2.7.4
-        version: 2.7.4
-      '@rollup/plugin-node-resolve':
-        specifier: ^16.0.3
-        version: 16.0.3(rollup@4.63.1)
       '@rsbuild/plugin-sass':
         specifier: ^2.0.1
         version: 2.0.1(@rsbuild/core@2.1.8(core-js@3.39.0))
@@ -42,9 +36,6 @@ importers:
       '@types/react':
         specifier: ^18.3.11
         version: 18.3.13
-      rollup:
-        specifier: ^4.63.1
-        version: 4.63.1
       typescript:
         specifier: ^5.7.2
         version: 5.7.2

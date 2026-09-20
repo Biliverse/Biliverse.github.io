@@ -24,7 +24,7 @@ Biliverse 因此只用 `ui.setNavigationButton` 创建官方 MORE 按钮。收�
 
 用户截图确认 `0454427` 版本仍不能退出。本机客户端存在 JSBridge URL 白名单，在方法分发之前检查来源域名；失败会记录 `is not allowed to call jsbridge method!` 后返回。github.io 不在内置名单中，单独加载官方 SDK 不会改变网页来源。
 
-根据用户授权，Enhanced 入口改为 `https://app.bilibili.com/settings/?navhide=1`。Enhanced 安装首页与 15 项静态资源的精确映射；Surge 使用 Map Local、Loon 使用远程文件 Mock，下载源仍是 `https://biliverse.github.io/settings/`。不具备原生远程文件 Mock 的平台使用网站构建的 `settings/mock.js`，直接返回同次构建的 HTML、JS、CSS 和 PNG 字节；通过 util 的 done 适配宿主，不联网、不读写存储。该脚本与页面构建时间一致。
+根据用户授权，Enhanced 入口改为 `https://app.bilibili.com/settings/?navhide=1`。Enhanced 安装首页与静态资源的精确映射；Surge 使用 Map Local、Loon 使用远程文件 Mock，下载源仍是 `https://biliverse.github.io/settings/`。当时其余平台通过网站构建的静态响应脚本返回同次构建的 HTML、JS、CSS 和 PNG；后来模板改用原生文件映射或透明 URL 重写，该脚本及其构建步骤已移除。
 
 四个业务模块各自将 `/api/{module}` 直接 Mock 到同版 BoxJS，并同时支持 app.bilibili.com 与原 github.io 域名。Enhanced 唯一安装 PreferencePanes 通用 `web.js` 与固定 `/api/get|set|delete` 存储 API；页面只请求 `/api/**`，不再存在内部 `/configs/**` 请求。原 `/x/...` 官方接口不被静态规则接管。
 

@@ -1,8 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
-import { rollup } from 'rollup';
 
 const root = path.resolve(import.meta.dirname, '..');
 const check = process.argv.includes('--check');
@@ -25,42 +23,6 @@ if (stamp) {
     'settings/index.html',
     outputs.get('settings/index.html').toString().replace('本地预览（未构建）', label),
   );
-}
-// 不支持远程文件 Mock 的代理返回同次构建的静态资源，包括模块页使用的项目主题。
-// Proxies without remote file mocks return same-build assets, including the project theme used by module pages.
-const types = {
-  '.css': 'text/css',
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.mjs': 'text/javascript',
-  '.png': 'image/png',
-};
-const assets = Object.fromEntries(
-  [...outputs].map(([name, body]) => [
-    name === 'settings/index.html' ? '/settings/' : `/${name}`,
-    [types[path.extname(name)], name.endsWith('.png') ? [...body] : body.toString()],
-  ]),
-);
-const bundle = await rollup({
-  input: path.join(root, 'settings/mock.mjs'),
-  plugins: [
-    nodeResolve(),
-    {
-      name: 'website-assets',
-      resolveId(id) {
-        if (id === '#website-assets') return id;
-      },
-      load(id) {
-        if (id === '#website-assets') return `export default ${JSON.stringify(assets)};`;
-      },
-    },
-  ],
-});
-try {
-  const { output } = await bundle.generate({ format: 'iife' });
-  outputs.set('settings/mock.js', output[0].code);
-} finally {
-  await bundle.close();
 }
 const targetRoot = path.join(root, stamp ? 'doc_build/settings' : 'docs/public/settings');
 if (!check) await rm(targetRoot, { recursive: true, force: true });
