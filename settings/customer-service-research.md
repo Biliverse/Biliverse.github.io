@@ -26,7 +26,7 @@ Biliverse 因此只用 `ui.setNavigationButton` 创建官方 MORE 按钮。收�
 
 根据用户授权，Enhanced 入口改为 `https://app.bilibili.com/settings/?navhide=1`。Enhanced 安装首页与静态资源的精确映射；Surge 使用 Map Local、Loon 使用远程文件 Mock，下载源仍是 `https://biliverse.github.io/settings/`。当时其余平台通过网站构建的静态响应脚本返回同次构建的 HTML、JS、CSS 和 PNG；后来模板改用原生文件映射或透明 URL 重写，该脚本及其构建步骤已移除。
 
-四个业务模块各自将 `/api/{module}` 直接 Mock 到同版 BoxJS，并同时支持 app.bilibili.com 与原 github.io 域名。Enhanced 唯一安装 PreferencePanes 通用 `web.js` 与固定 `/api/get|set|delete` 存储 API；页面只请求 `/api/**`，不再存在内部 `/configs/**` 请求。原 `/x/...` 官方接口不被静态规则接管。
+四个业务模块各自将 `/api/{module}` 直接 Mock 到同版 BoxJS，并同时支持 app.bilibili.com 与原 github.io 域名。Enhanced 唯一逐文件映射 PreferencePanes 通用静态页面，并安装固定 `/api/get|set|delete` 存储 API；页面只请求 `/api/**`，不再存在内部 `/configs/**` 请求。原 `/x/...` 官方接口不被静态规则接管。
 
 静态映射保持请求 URL，不使用会把浏览器地址改回 github.io 的 302 跳转。普通 github.io 页面仍可访问；App 内全屏退出必须从更新后的 Enhanced 入口进入。域名满足内置白名单是必要条件，最终关闭行为仍需客户端验证。
 

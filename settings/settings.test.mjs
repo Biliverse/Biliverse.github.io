@@ -167,11 +167,14 @@ test('Bilibili URL adapter only owns supported navigation and falls back after n
   assert.deepEqual(supported.assigned, [supported.url]);
 });
 
-test('local preview routes module BoxJS APIs separately from the fixed storage API and web artifact', async () => {
+test('local preview routes module BoxJS APIs separately from the fixed storage API and static page assets', async () => {
   const source = await readFile(new URL('../scripts/preview-settings.mjs', import.meta.url), 'utf8');
-  assert.ok(source.includes("const match = /^\\/api\\/([a-zA-Z0-9_-]+)$/.exec(url.pathname);"));
-  assert.ok(source.includes("const api = /^\\/api\\/(?:get|set|delete)$/.test(url.pathname);"));
-  assert.ok(source.includes('const web ='));
-  assert.ok(source.includes("${api ? 'api' : 'web'}.js"));
+  assert.ok(source.includes('const match = /^\\/api\\/([a-zA-Z0-9_-]+)$/.exec(url.pathname);'));
+  assert.ok(source.includes('const api = /^\\/api\\/(?:get|set|delete)$/.test(url.pathname);'));
+  assert.ok(source.includes('PreferencePanes/dist/api.js'));
+  assert.ok(source.includes('PreferencePanes/dist/module'));
+  assert.ok(source.includes("'/settings/assets/index.mjs': 'index.mjs'"));
+  assert.ok(source.includes("'/settings/assets/navigation.mjs': 'navigation.mjs'"));
+  assert.doesNotMatch(source, /dist\/web\.js|PreferencePanes\.Web/);
   assert.doesNotMatch(source, /\$httpClient|relayConfig|\/configs\//);
 });

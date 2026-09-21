@@ -3,8 +3,8 @@ import http from 'node:http';
 import path from 'node:path';
 import vm from 'node:vm';
 
-// 预览真实发布产物；Enhanced 提供通用前端与固定存储 API，各模块直接提供自己的 BoxJS API。
-// Preview the real deployment artifacts with Enhanced owning the shared frontend and fixed storage API while modules expose their BoxJS APIs directly.
+// 预览真实发布产物；Enhanced 映射静态页面资源并提供固定存储 API，各模块直接提供自己的 BoxJS API。
+// Preview the real deployment artifacts with Enhanced mapping static page resources and providing the fixed storage API while modules expose their BoxJS APIs directly.
 const publicDir = path.resolve(import.meta.dirname, '../docs/public');
 const store = new Map();
 
@@ -32,8 +32,18 @@ async function configResponse(resource) {
   if (['get', 'set', 'delete'].includes(match?.[1])) return { status: 404, headers: {}, body: '' };
   if (!match) return { status: 404, headers: {}, body: '' };
   try {
-    const script = await readFile(path.resolve(import.meta.dirname, '../..', match[1], 'dist/config.dev.bundle.js'), 'utf8');
-    return (await execute(script, { url: url.href, method: resource.method, headers: resource.headers ?? {}, body: resource.body })) ?? { status: 404, headers: {}, body: '' };
+    const script = await readFile(
+      path.resolve(import.meta.dirname, '../..', match[1], 'dist/config.dev.bundle.js'),
+      'utf8',
+    );
+    return (
+      (await execute(script, {
+        url: url.href,
+        method: resource.method,
+        headers: resource.headers ?? {},
+        body: resource.body,
+      })) ?? { status: 404, headers: {}, body: '' }
+    );
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
     return { status: 404, headers: {}, body: '' };
@@ -50,21 +60,38 @@ const server = http.createServer(async (request, reply) => {
     }
     const config = /^\/api\/([a-zA-Z0-9_-]+)$/.exec(url.pathname) && !/^\/api\/(?:get|set|delete)$/.test(url.pathname);
     const api = /^\/api\/(?:get|set|delete)$/.test(url.pathname);
-    const web =
-      /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.test(url.pathname) ||
-      ['/settings/assets/index.mjs', '/settings/assets/navigation.mjs'].includes(url.pathname);
-    if (config || api || web) {
+    const page = /^\/settings\/([a-zA-Z0-9_-]+)\/?$/.test(url.pathname);
+    const asset = {
+      '/settings/assets/index.mjs': 'index.mjs',
+      '/settings/assets/navigation.mjs': 'navigation.mjs',
+    }[url.pathname];
+    if (config || api) {
       let body = '';
       for await (const chunk of request) body += chunk;
       let result;
-      if (config) result = await configResponse({ url: url.href, method: request.method, headers: request.headers, body });
+      if (config)
+        result = await configResponse({ url: url.href, method: request.method, headers: request.headers, body });
       else {
-        const file = path.resolve(import.meta.dirname, '../../..', `NSNanoCat/PreferencePanes/dist/${api ? 'api' : 'web'}.js`);
+        const file = path.resolve(import.meta.dirname, '../../../NSNanoCat/PreferencePanes/dist/api.js');
         const script = await readFile(file, 'utf8');
         result = await execute(script, { url: url.href, method: request.method, headers: request.headers, body });
       }
       reply.writeHead(result?.status ?? 404, result?.headers);
       reply.end(result?.body);
+      return;
+    }
+    if (page || asset) {
+      const file = path.resolve(
+        import.meta.dirname,
+        '../../../NSNanoCat/PreferencePanes/dist/module',
+        asset ?? 'index.html',
+      );
+      const body = await readFile(file);
+      reply.writeHead(200, {
+        'Content-Type': asset ? 'text/javascript' : 'text/html',
+        'Cache-Control': 'no-store',
+      });
+      reply.end(request.method === 'HEAD' ? undefined : body);
       return;
     }
     if (!url.pathname.startsWith('/settings/') || !['GET', 'HEAD'].includes(request.method)) {
