@@ -141,7 +141,7 @@ test('website output contains its page script and no PreferencePanes runtime', a
   assert.match(page, /new ModuleFrame\(`\/settings\/\$\{moduleName\}`/);
   assert.match(page, /await bridge\.isSupport\('ability\.openScheme'\)/);
   assert.match(page, /frame\.addEventListener\('open-url'/);
-  assert.match(page, /https:\/\/biliverse\.github\.io\/settings\/theme\.css\?v=0\.9\.10/);
+  assert.match(page, /const moduleStylesheet = ['"]\/settings\/theme\.css\?v=0\.9\.10['"]/);
   assert.match(page, /['"]X-PreferencePanes-JSON['"]: `\/api\/\$\{moduleName\}`/);
   assert.match(page, /['"]X-PreferencePanes-CSS['"]: moduleStylesheet/);
   assert.doesNotMatch(page, /dataset\.(?:page|json|css)/);
@@ -154,7 +154,7 @@ test('Bilibili URL adapter only owns supported navigation and falls back after n
   assert.equal(unsupported.frame.url, '/settings/Enhanced');
   assert.deepEqual(unsupported.frame.options.headers, {
     'X-PreferencePanes-JSON': '/api/Enhanced',
-    'X-PreferencePanes-CSS': 'https://biliverse.github.io/settings/theme.css?v=0.9.10',
+    'X-PreferencePanes-CSS': '/settings/theme.css?v=0.9.10',
   });
   assert.deepEqual(unsupported.nativeCalls, []);
   assert.deepEqual(unsupported.assigned, []);

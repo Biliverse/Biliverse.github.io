@@ -10,7 +10,7 @@ const container = document.querySelector('[data-preference-panes-pages]');
 const home = document.querySelector('[data-preference-panes-home]');
 const template = document.querySelector('template[data-preference-panes-module]');
 const buttons = [...home.querySelectorAll('[data-module]')];
-const moduleStylesheet = 'https://biliverse.github.io/settings/theme.css?v=0.9.10';
+const moduleStylesheet = '/settings/theme.css?v=0.9.10';
 let frame;
 let navigationRevision = 0;
 let navigationState = { title: document.title, actions: [], busy: false };

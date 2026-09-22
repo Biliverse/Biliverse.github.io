@@ -112,13 +112,8 @@ const server = http.createServer(async (request, reply) => {
           '.json': 'application/json',
           '.png': 'image/png',
         }[path.extname(target)] ?? 'text/plain';
-      // 本站资源始终来自当前检出，正式与预览环境都直接引用官方依赖。
-      // Site resources always use the current checkout; both production and preview use official dependencies directly.
-      const output = mime.startsWith('text/')
-        ? body.toString().replaceAll('https://biliverse.github.io/settings/theme.css', '/settings/theme.css')
-        : body;
       reply.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-store' });
-      reply.end(request.method === 'HEAD' ? undefined : output);
+      reply.end(request.method === 'HEAD' ? undefined : body);
     } catch (error) {
       if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error;
       reply.writeHead(404);

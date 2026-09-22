@@ -9,7 +9,7 @@
 接入模板按职责包含三类规则：
 
 - 配置 Mock：从同版业务仓库的 Gist/Release 取得 BoxJS JSON，非原生 Mock 平台使用同版纯配置响应脚本。
-- 项目主页：把本站的 index.html、index.mjs 和图片素材映射到 app.bilibili.com；模块页使用的 `theme.css` 保留本站绝对地址。官方 CSS 和 JSBridge SDK 始终直接使用官方地址。
+- 项目主页：把本站的 index.html、index.mjs、theme.css 和图片素材映射到 app.bilibili.com。页面统一请求同源 `/settings/theme.css`，接入模板再将该请求映射到本站真实 CSS 文件，避免请求地址与远程文件地址自引用。官方 CSS 和 JSBridge SDK 始终直接使用官方地址。
 - 通用设置前后端：仅 Enhanced 将 `/settings/{module}`、`/settings/assets/index.mjs`、`/settings/assets/navigation.mjs` 分别映射到 PreferencePanes latest 的 `index.html`、`index.mjs`、`navigation.mjs`，并安装只处理固定 `/api/get|set|delete` 的 `api.js`。页面资源不经过响应脚本。
 
 Enhanced 的接入模板包含 `/api/Enhanced` BoxJS Mock，以及唯一通用设置前端和固定存储 API。Global、Redirect、ADBlock 的接入模板只包含各自的 `/api/{module}` BoxJS Mock，不重复映射 PreferencePanes 页面资源或 `api.js`。PreferencePanes 的三个页面文件与 `api.js` 必须来自同一 Release，再更新 Enhanced 模板。
