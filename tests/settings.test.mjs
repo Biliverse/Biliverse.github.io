@@ -196,7 +196,13 @@ test('SDK or Common WebView initialization failures reject instead of starting a
 });
 
 test('both deployment channels copy the framework unchanged and package only provided content', async () => {
-  const template = await readFile(process.env.PREFERENCE_PANES_HOME ?? new URL('../../../NSNanoCat/PreferencePanes/dist/home.html', import.meta.url));
+  const templateSource = process.env.PREFERENCE_PANES_HOME ?? 'https://github.com/NSNanoCat/PreferencePanes/releases/latest/download/home.html';
+  let template;
+  if (templateSource.startsWith('https://')) {
+    const response = await fetch(templateSource);
+    assert.ok(response.ok, `PreferencePanes homepage template: HTTP ${response.status}`);
+    template = Buffer.from(await response.arrayBuffer());
+  } else template = await readFile(templateSource);
   const source = JSON.parse(await readFile(new URL('../settings/home.json', import.meta.url), 'utf8'));
   const optional = [];
   for (const name of ['theme.css', 'bridge.mjs']) {

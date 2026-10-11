@@ -6,7 +6,7 @@
 
 `theme.css` 维护官方色板依赖、Biliverse 粉色与日夜配色；网格、列表、四／六／八列与居中版本由默认样式提供。`bridge.mjs` 复用原首页官方 SDK 与 Common WebView 原生标题、MORE、确认、Toast、主题、键盘和链接调用。可选 CSS 或 Bridge 的 HEAD 返回 404 才使用默认网页功能；200 才加载，其它错误直接显示。普通浏览器提供了 Bilibili Bridge 时需要真实 Common WebView，否则初始化会报错。
 
-Enhanced 首页 Mock 直接指向 PreferencePanes Release 的共用 `home.html`；JSON、品牌 CSS、Bridge 和图片逐文件指向 Biliverse 内容资源。模块与字段子页在同一文档中渲染，固定存储 API 使用 `api.js`。各业务模块只提供自己的 BoxJS API，原有存储和业务协议保持不变。
+Enhanced 首页 Mock 和固定存储 API 分别使用 PreferencePanes 最新正式版的 `home.html`、`api.js`；正式版 JSON、品牌 CSS、Bridge 和图片随 Enhanced 自身版本 Release 发布。内容源码仍只在本仓库维护，Enhanced 按确定提交打包；更新网站不会改变已发布 Enhanced 的专用资源。模块与字段子页在同一文档中渲染，各业务模块只提供自己的 BoxJS API，原有存储和业务协议保持不变。
 
 ```sh
 pnpm settings:build
@@ -16,7 +16,7 @@ pnpm settings:test
 pnpm settings:preview
 ```
 
-构建默认读取 PreferencePanes Release 的 `home.html`。验收未发布的模板时，先构建 PreferencePanes，再为上述命令指定同一份本地文件：
+构建默认读取 PreferencePanes `releases/latest/download/home.html`，每次构建和部署获取最新正式版。验收未发布的模板时，先构建 PreferencePanes，再为上述命令指定同一份本地文件：
 
 ```sh
 export PREFERENCE_PANES_HOME=/Users/clyne/GitHub/NSNanoCat/PreferencePanes/dist/home.html
@@ -43,8 +43,8 @@ CSS 合并后重新通过框架 71 项及两站 6 项测试、框架类型检查
 
 外链打开方式补齐后通过框架 72 项及两站 7 项测试、框架类型检查和 Apifox 一致性校验，两站设置产物已重新生成。Codex 浏览器实际验证官网内部导航、沿网页历史返回到官网及设置首页、GitHub 新标签和原设置页保留；Bilibili 新页仅验证了 SDK 测试替身的成功／失败及迟到回调，实际容器行为仍需 Common WebView 设备验收。
 
-## 单文档框架配套（1.3.1）
+## 单文档框架配套
 
 首页、模块和字段共用 PreferencePanes 内联 `home.html`。首页只 HEAD 探测，点击模块才 GET 配置并读取 Settings；字段子页复用会话。网站仍只提供 home.json、可选 theme.css / bridge.mjs 及图标，不部署旧模块 HTML 或 JS。Bilibili Bridge 与品牌 CSS 原样保留。
 
-构建固定使用 PreferencePanes 1.3.1 的 `home.html`，与 Enhanced 模板同步部署。本地验收可用 `PREFERENCE_PANES_HOME` 指向框架产物。
+构建与验收默认使用 PreferencePanes 最新正式版的 `home.html`，不固定版本号。本地验收可用 `PREFERENCE_PANES_HOME` 指向框架产物。
