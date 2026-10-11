@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image
 
 root = Path(__file__).resolve().parents[2]
-for record in json.loads((root / "Biliverse.github.io/settings/icons-manifest.json").read_text()):
+for record in json.loads((root / "Biliverse.github.io/scripts/icons-manifest.json").read_text()):
     source = root / record["source"]
     assert hashlib.sha256(source.read_bytes()).hexdigest() == record["sha256"]
     assert len(record["outputs"]) == 1

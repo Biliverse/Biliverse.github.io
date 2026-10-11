@@ -9,7 +9,7 @@ from pathlib import Path
 from PIL import Image
 
 root = Path(__file__).resolve().parents[1]
-sources = {"Biliverse": root / "settings/logo.png"}
+sources = {"Biliverse": root / "settings/assets/logo-source.png"}
 sources.update({name: root.parent / name / "src/assets/icon.png"
                 for name in ("Enhanced", "Global", "Redirect", "ADBlock")})
 
@@ -67,7 +67,7 @@ for name, source in sources.items():
     crop = (math.floor(cx - radius), math.floor(cy - radius), math.floor(cx - radius) + side, math.floor(cy - radius) + side)
     square = image.crop(crop)
     output = square.resize((256, 256), Image.Resampling.LANCZOS)
-    destination = root / "settings/icons"
+    destination = root / "settings/assets"
     destination.mkdir(parents=True, exist_ok=True)
     output.save(destination / f"{name}_subject.png", optimize=True)
     assert source.read_bytes() == original
@@ -75,6 +75,6 @@ for name, source in sources.items():
                     "sha256": hashlib.sha256(original).hexdigest(), "alphaBounds": bounds,
                     "subjectBounds": body, "center": [cx, cy], "crop": crop,
                     "squareSize": side, "outputSize": 256,
-                    "outputs": [f"settings/icons/{name}_subject.png"]})
-(root / "settings/icons-manifest.json").write_text(json.dumps(records, indent=2) + "\n")
+                    "outputs": [f"settings/assets/{name}_subject.png"]})
+(root / "scripts/icons-manifest.json").write_text(json.dumps(records, indent=2) + "\n")
 print(json.dumps(records, indent=2))

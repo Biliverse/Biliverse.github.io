@@ -1,7 +1,7 @@
 [
   {
     "name": "Biliverse",
-    "source": "Biliverse.github.io/settings/logo.png",
+    "source": "Biliverse.github.io/settings/assets/logo-source.png",
     "sha256": "6dd50e53cf9d86577f74dd0f97bc6350e2287ee887df0a9b3c93c1c5f2549b49",
     "alphaBounds": [
       100,
@@ -28,7 +28,7 @@
     "squareSize": 854,
     "outputSize": 256,
     "outputs": [
-      "settings/icons/Biliverse_subject.png"
+      "settings/assets/Biliverse_subject.png"
     ]
   },
   {
@@ -60,7 +60,7 @@
     "squareSize": 994,
     "outputSize": 256,
     "outputs": [
-      "settings/icons/Enhanced_subject.png"
+      "settings/assets/Enhanced_subject.png"
     ]
   },
   {
@@ -92,7 +92,7 @@
     "squareSize": 994,
     "outputSize": 256,
     "outputs": [
-      "settings/icons/Global_subject.png"
+      "settings/assets/Global_subject.png"
     ]
   },
   {
@@ -124,7 +124,7 @@
     "squareSize": 996,
     "outputSize": 256,
     "outputs": [
-      "settings/icons/Redirect_subject.png"
+      "settings/assets/Redirect_subject.png"
     ]
   },
   {
@@ -156,7 +156,7 @@
     "squareSize": 990,
     "outputSize": 256,
     "outputs": [
-      "settings/icons/ADBlock_subject.png"
+      "settings/assets/ADBlock_subject.png"
     ]
   }
 ]

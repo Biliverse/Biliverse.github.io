@@ -8,7 +8,7 @@
     "preview": "rspress preview",
     "settings:build": "node scripts/build-settings.mjs",
     "settings:check": "node scripts/build-settings.mjs --check",
-    "settings:test": "node --test settings/settings.test.mjs",
+    "settings:test": "node --test tests/settings.test.mjs",
     "settings:preview": "node scripts/preview-settings.mjs"
   },
   "dependencies": {
