@@ -6,7 +6,7 @@
 
 `theme.css` 维护官方色板依赖、Biliverse 粉色与日夜配色；网格、列表、四／六／八列与居中版本由默认样式提供。`bridge.mjs` 是唯一的项目映射，直接引用官方 SDK，将共用接口转换为 Common WebView 原生标题、MORE、确认、Toast、主题、键盘和链接调用；菜单忙碌状态与当前标题复用框架，监听与原生回调由映射释放。官方 SDK 与 CSS 均不复制打包，Bilibili 协议不进入通用框架。可选 CSS 或 Bridge 的 HEAD 返回 404 才使用默认网页功能；200 才加载，其它错误直接显示。普通浏览器提供了 Bilibili Bridge 时需要真实 Common WebView，否则初始化会报错。
 
-Enhanced 首页 Mock 和固定存储 API 分别使用 PreferencePanes 最新正式版的 `home.html`、`api.js`；正式版 JSON、品牌 CSS、Bridge 和图片随 Enhanced 自身版本 Release 发布。内容源码仍只在本仓库维护，Enhanced 按确定提交打包；更新网站不会改变已发布 Enhanced 的专用资源。模块与字段子页在同一文档中渲染，各业务模块只提供自己的 BoxJS API，原有存储和业务协议保持不变。
+Enhanced 首页 Mock 和固定存储 API 分别使用 PreferencePanes 最新正式版的 `home.html`、`api.js`；JSON、品牌 CSS 和 Bridge 直接映射本网站资源。JSON 中的图标使用官网完整 URL，由浏览器直接加载，不经过 Mock，也不打包进 Enhanced。模块与字段子页在同一文档中渲染，各业务模块只提供自己的 BoxJS API，原有存储和业务协议保持不变。
 
 ```sh
 pnpm settings:build

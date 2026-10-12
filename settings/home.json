@@ -1,6 +1,6 @@
 {
   "title": "Biliverse",
-  "logo": "assets/Biliverse_subject.png",
+  "logo": "https://biliverse.github.io/settings/assets/Biliverse_subject.png",
   "logoText": "Biliverse",
   "sections": [
     {
@@ -10,28 +10,28 @@
         {
           "name": "Enhanced",
           "icon": {
-            "src": "assets/Enhanced_subject.png"
+            "src": "https://biliverse.github.io/settings/assets/Enhanced_subject.png"
           },
           "module": "Enhanced"
         },
         {
           "name": "Global",
           "icon": {
-            "src": "assets/Global_subject.png"
+            "src": "https://biliverse.github.io/settings/assets/Global_subject.png"
           },
           "module": "Global"
         },
         {
           "name": "Redirect",
           "icon": {
-            "src": "assets/Redirect_subject.png"
+            "src": "https://biliverse.github.io/settings/assets/Redirect_subject.png"
           },
           "module": "Redirect"
         },
         {
           "name": "ADBlock",
           "icon": {
-            "src": "assets/ADBlock_subject.png"
+            "src": "https://biliverse.github.io/settings/assets/ADBlock_subject.png"
           },
           "module": "ADBlock"
         }

@@ -34,7 +34,7 @@ for (const name of ['theme.css', 'bridge.mjs']) {
     if (error.code !== 'ENOENT') throw error;
   }
 }
-const jsonURL = new URL('https://settings.invalid/settings/home.json');
+const jsonURL = new URL('https://biliverse.github.io/settings/home.json');
 for (const source of [config.logo, ...config.sections.flatMap(section => section.items.map(item => item.icon.src))].filter(Boolean)) {
   const url = new URL(source, jsonURL);
   if (url.origin !== jsonURL.origin) continue;

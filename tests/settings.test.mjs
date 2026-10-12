@@ -241,7 +241,8 @@ test('both deployment channels copy the framework unchanged and package only pro
       if (error.code !== 'ENOENT') throw error;
     }
   }
-  const images = [...new Set([source.logo, ...source.sections.flatMap(section => section.items.map(item => item.icon.src))].filter(Boolean))];
+  const images = [...new Set([source.logo, ...source.sections.flatMap(section => section.items.map(item => item.icon.src))].filter(Boolean))]
+    .map(image => new URL(image).pathname.slice('/settings/'.length));
   for (const directory of process.env.SETTINGS_TEST_DIRS?.split(',') ?? ['docs/public', 'doc_build']) {
     const base = new URL(`../${directory}/settings/`, import.meta.url);
     assert.deepEqual(await readFile(new URL('index.html', base)), template);
