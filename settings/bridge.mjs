@@ -27,9 +27,7 @@ export default async function createBridge({ menu }) {
   menu.element.hidden = true;
   document.body.append(menu.element);
   const root = document.documentElement;
-  let revision = 0;
   let destroyed = false;
-  let state = { title: document.title, actions: [], busy: false };
   const confirmations = new Set();
 
   /**
@@ -52,7 +50,7 @@ export default async function createBridge({ menu }) {
       root.style.setProperty('--pp-keyboard-height', `${result.data.status ? result.data.height : 0}px`);
   };
   const onNavigation = (result) => {
-    if (!destroyed && result.code === 0 && !state.busy && result.data?.id === 'biliverse.more') menu.open();
+    if (!destroyed && result.code === 0 && result.data?.id === 'biliverse.more') menu.open();
   };
   applyTheme(navigator.userAgent.includes('themeId/2') ? 2 : 1);
   bridge.addChannel('ui.observeThemeChange', onTheme, { immediately: true });
@@ -67,13 +65,12 @@ export default async function createBridge({ menu }) {
      * @returns {Promise<void>} 官方导航已更新 / Official navigation updated.
      */
     async update(next) {
-      state = next;
-      const current = ++revision;
-      await bridge.useNative('ui.setTitle', { title: state.title });
-      if (destroyed || current !== revision) return;
-      await bridge.useNative('ui.setNavigationButton', {
-        buttons: !state.busy && state.actions.length ? [{ id: 'biliverse.more', type: 3, visible: true }] : [],
-      });
+      await Promise.all([
+        bridge.useNative('ui.setTitle', { title: next.title }),
+        bridge.useNative('ui.setNavigationButton', {
+          buttons: !next.busy && next.actions.length ? [{ id: 'biliverse.more', type: 3, visible: true }] : [],
+        }),
+      ]);
     },
     confirm(message) {
       return new Promise((resolve, reject) => {
@@ -87,7 +84,7 @@ export default async function createBridge({ menu }) {
         try {
           bridge.callNative({
             method: 'ability.alert',
-            data: { type: 'confirm', title: state.title, message, confirmButton: '确定', cancelButton: '取消' },
+            data: { type: 'confirm', title: document.title, message, confirmButton: '确定', cancelButton: '取消' },
             onConfirm: () => finish(true),
             onCancel: cancel,
             onNeutral: cancel,
@@ -115,7 +112,7 @@ export default async function createBridge({ menu }) {
      * Preserve settings when an explicit new-page request fails; legacy calls keep their existing behavior.
      * @param {string} url 完整目标地址 / Absolute target URL.
      * @param {"_self" | "_blank"} [target] 当前页或新页；省略时使用原宿主路由 / Current or new page; omission keeps the original host route.
-     * @returns {void | Promise<void>} 新页的原生响应；其它调用无返回值 / Native response for new pages; other calls return nothing.
+     * @returns {void | Promise<void>} 原生响应或当前页导航 / Native response or current-page navigation.
      */
     openURL(url, target) {
       switch (target) {
@@ -123,40 +120,34 @@ export default async function createBridge({ menu }) {
           return window.location.assign(url);
         case '_blank':
           if (!openSchemeSupported) throw new Error('当前宿主不支持打开新页面');
-          return new Promise((resolve, reject) => {
-            bridge.callNative({
-              method: 'ability.openScheme',
-              data: { url },
-              callback: (result) => {
-                if (destroyed) return resolve();
-                if (result instanceof Error || result === 'error' || (typeof result?.code === 'number' && result.code !== 0)) reject(new Error('打开新页面失败'));
-                else resolve();
-              },
-            });
-          });
+          break;
         default:
           if (!openSchemeSupported) return window.location.assign(url);
-          try {
-            bridge.callNative({
-              method: 'ability.openScheme',
-              data: { url },
-              callback: (result) => {
-                if (
-                  !destroyed &&
-                  (result instanceof Error || result === 'error' || (typeof result?.code === 'number' && result.code !== 0))
-                )
-                  window.location.assign(url);
-              },
-            });
-          } catch (error) {
-            window.location.assign(url);
-          }
           break;
       }
+      return new Promise((resolve, reject) => {
+        try {
+          bridge.callNative({
+            method: 'ability.openScheme',
+            data: { url },
+            callback: (result) => {
+              if (destroyed) return resolve();
+              if (result instanceof Error || result === 'error' || (typeof result?.code === 'number' && result.code !== 0)) {
+                if (target === '_blank') return reject(new Error('打开新页面失败'));
+                window.location.assign(url);
+              }
+              resolve();
+            },
+          });
+        } catch (error) {
+          if (target === '_blank') return reject(error);
+          window.location.assign(url);
+          resolve();
+        }
+      });
     },
     destroy() {
       destroyed = true;
-      revision++;
       for (const cancel of confirmations) cancel();
       bridge.removeChannel('ui.observeThemeChange', onTheme);
       bridge.removeChannel('ui.observeKeyboardStatus', onKeyboard);

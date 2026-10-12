@@ -56,8 +56,12 @@ async function fixture({ supported = true, common = true, sdkFailure = false, us
   const menu = {
     element: {},
     opened: 0,
+    disabled: false,
+    update(items, busy = false) {
+      this.disabled = busy || items.length === 0;
+    },
     open() {
-      this.opened++;
+      if (!this.disabled) this.opened++;
     },
   };
   const restore = () => {
@@ -91,6 +95,9 @@ test('native host owns confirmation, MORE, theme and keyboard; destroy detaches 
     await f.host.update({ title: 'Enhanced', actions: [{ id: 'reset' }], busy: false });
     f.channels.get('ui.observeNavigationClick')({ code: 0, data: { id: 'biliverse.more' } });
     assert.equal(f.menu.opened, 1);
+    f.menu.update([{ id: 'reset' }], true);
+    f.channels.get('ui.observeNavigationClick')({ code: 0, data: { id: 'biliverse.more' } });
+    assert.equal(f.menu.opened, 1);
     assert.equal(f.root.dataset.theme, 'dark');
     f.channels.get('ui.observeThemeChange')({ code: 0 });
     assert.equal(f.root.dataset.theme, 'dark');
@@ -98,7 +105,9 @@ test('native host owns confirmation, MORE, theme and keyboard; destroy detaches 
     assert.equal(f.root.dataset.theme, 'light');
     f.channels.get('ui.observeKeyboardStatus')({ code: 0, data: { status: true, height: 320 } });
     assert.equal(f.properties.get('--pp-keyboard-height'), '320px');
+    document.title = '当前字段页面';
     const accepted = f.host.confirm('重置？');
+    assert.equal(f.calls.at(-1).data.title, document.title);
     f.calls.at(-1).onConfirm();
     assert.equal(await accepted, true);
     const cancelled = f.host.confirm('清空？');
@@ -118,7 +127,7 @@ test('native host owns confirmation, MORE, theme and keyboard; destroy detaches 
   }
 });
 
-test('obsolete native title responses cannot publish buttons after a newer state or departure', async () => {
+test('native buttons update without waiting for title acknowledgements and late acknowledgements send no commands', async () => {
   const titles = [];
   const f = await fixture({
     useNative: (method) => (method === 'ui.setTitle' ? new Promise((resolve) => titles.push(resolve)) : undefined),
@@ -126,13 +135,17 @@ test('obsolete native title responses cannot publish buttons after a newer state
   try {
     const old = f.host.update({ title: '旧', actions: [{ id: 'reset' }], busy: false });
     const next = f.host.update({ title: '新', actions: [], busy: true });
+    const buttons = f.calls.filter((call) => call.method === 'ui.setNavigationButton');
+    assert.equal(buttons.length, 2);
+    assert.equal(buttons[0].data.buttons.length, 1);
+    assert.deepEqual(buttons[1].data.buttons, []);
     titles[0]();
     await old;
-    assert.equal(f.calls.filter((call) => call.method === 'ui.setNavigationButton').length, 0);
+    assert.equal(f.calls.length, 5);
     f.host.destroy();
     titles[1]();
     await next;
-    assert.equal(f.calls.filter((call) => call.method === 'ui.setNavigationButton').length, 0);
+    assert.equal(f.calls.length, 5);
   } finally {
     f.restore();
   }
@@ -193,6 +206,21 @@ test('explicit new-page requests reject unsupported or failed native calls witho
 test('SDK or Common WebView initialization failures reject instead of starting a browser host', async () => {
   await assert.rejects(fixture({ sdkFailure: true }), /SDK 加载失败/);
   await assert.rejects(fixture({ common: false }), /common WebView/);
+});
+
+test('synchronous URL failures preserve explicit new-page requests and the existing default fallback', async () => {
+  const f = await fixture();
+  try {
+    const error = new Error('Native URL call failed');
+    window.biliBridge.callNative = () => { throw error; };
+    await assert.rejects(f.host.openURL('https://github.com/Biliverse', '_blank'), error);
+    assert.deepEqual(f.urls, []);
+    await f.host.openURL('bilibili://main/regionv2');
+    assert.deepEqual(f.urls, ['bilibili://main/regionv2']);
+    f.host.destroy();
+  } finally {
+    f.restore();
+  }
 });
 
 test('both deployment channels copy the framework unchanged and package only provided content', async () => {
