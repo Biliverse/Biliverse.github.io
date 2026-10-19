@@ -15,10 +15,6 @@
     "activeMatch": "^/discussions/"
   },
   {
-    "text": "偏好面板",
-    "link": "/settings/"
-  },
-  {
     "type": "custom-link",
     "text": "赞助",
     "link": "https://afdian.com/a/HashBrown",

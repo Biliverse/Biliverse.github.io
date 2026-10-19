@@ -1,17 +1,17 @@
 # ⚙️ 偏好面板
 
-Biliverse 的[偏好面板](https://biliverse.github.io/settings/)用于配置 Enhanced、Global、Redirect 和 ADBlock，无需安装 BoxJs。面板使用 [PreferencePanes](https://github.com/NSNanoCat/PreferencePanes)，可从 Bilibili App 内或浏览器进入。
+Biliverse 的偏好面板用于配置 Enhanced、Global、Redirect 和 ADBlock，无需安装 BoxJs。面板使用 [PreferencePanes](https://github.com/NSNanoCat/PreferencePanes)，并依赖 Bilibili App 的内部组件，只能从 App 内访问。
 
 ## 进入设置页面
 
 1. 安装并启用最新版 [Enhanced](./enhanced#安装链接)。Enhanced 提供设置首页和共用存储接口；配置其他模块时，还需安装并启用对应的 [Global](./global#安装链接)、[Redirect](./redirect#安装链接) 或 [ADBlock](./ad-block#安装链接)。请更新完整的模块／插件／覆写，不要只更新脚本。
 2. 保持代理工具运行，确认模块已启用，且 `biliverse.github.io`、`app.bilibili.com` 的 HTTPS 解密生效。
-3. 打开 Bilibili App，依次进入「我的」→「Biliverse 哔哩万象」，再选择需要配置的模块。也可点击官网导航栏的「偏好面板」，或用同一设备的浏览器打开 <https://biliverse.github.io/settings/>。
+3. 打开 Bilibili App，依次进入「我的」→「Biliverse 哔哩万象」，再选择需要配置的模块。
 4. 选择显示版本号的模块进入设置。修改选项或输入内容后自动保存；重新进入面板可核对保存结果。
 
 设置保存在当前代理工具的持久化存储中，与 BoxJs 共用数据。更换设备或代理工具后，设置不会自动同步。
 
-入口显示「未安装」或设置无法保存时，请检查 Enhanced 和对应模块是否均已更新并启用、浏览器流量是否经过该代理工具，以及 HTTPS 解密是否生效。仅打开网页不能代替安装模块。
+入口显示「未安装」或设置无法保存时，请检查 Enhanced 和对应模块是否均已更新并启用、Bilibili App 的流量是否经过该代理工具，以及 HTTPS 解密是否生效。
 
 ## 配置来源与优先级
 
