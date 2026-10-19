@@ -9,7 +9,21 @@
     "redirect",
     "ad-block",
     "roaming",
-    "box-js",
+    {
+        "type": "custom-link",
+        "label": "⚙️ 设置指南",
+        "collapsible": false,
+        "items": [
+            {
+                "label": "偏好面板",
+                "link": "/guide/preferences"
+            },
+            {
+                "label": "🧰 BoxJs",
+                "link": "/guide/box-js"
+            }
+        ]
+    },
     {
         "type": "dir",
         "name": "appendix",
